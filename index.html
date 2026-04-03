@@ -87,8 +87,12 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 /* TASK CARD */
 .task-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:14px;display:flex;gap:12px;align-items:flex-start}
 .task-card.done{opacity:.55}
-.task-check{font-size:1.3rem;flex-shrink:0;margin-top:1px;transition:transform .15s}
-.task-check:hover{transform:scale(1.15)}
+.task-check{width:22px;height:22px;border-radius:6px;border:2px solid #cbd5e1;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all .15s;color:transparent;font-size:.85rem;font-weight:700}
+.task-check:hover{border-color:#818cf8}
+.task-check.chk{background:#6366f1;border-color:#6366f1;color:#fff}
+.task-check-sm{width:20px;height:20px;border-radius:5px;border:2px solid #cbd5e1;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;color:transparent;font-size:.75rem;font-weight:700;margin-right:10px}
+.task-check-sm:hover{border-color:#818cf8}
+.task-check-sm.chk{background:#6366f1;border-color:#6366f1;color:#fff}
 .task-body{flex:1;min-width:0}
 .task-title{font-size:.875rem;font-weight:600;color:#1e293b}
 .task-title.crossed{text-decoration:line-through;color:#94a3b8}
@@ -559,7 +563,7 @@ function renderHome(){
   uel.innerHTML=urgent.length?urgent.slice(0,3).map(t=>{
     const dl=daysLeft(t.due);
     const b=dl<0?'<span class="badge badge-red">⚠️ 지남</span>':dl===0?'<span class="badge badge-red">오늘!</span>':dl===1?'<span class="badge badge-orange">내일</span>':`<span class="badge badge-yellow">${dl}일</span>`;
-    return `<div class="row"><div class="row-left"><div class="row-title">${esc(t.title)}</div><div class="row-sub">${esc(t.subject||'과목 미입력')}</div></div>${b}</div>`;
+    return `<div class="row"><button class="task-check-sm${t.done?' chk':''}" onclick="quickTask('${t.id}')">✓</button><div class="row-left"><div class="row-title${t.done?' crossed':''}">${esc(t.title)}</div><div class="row-sub">${esc(t.subject||'과목 미입력')}</div></div>${b}</div>`;
   }).join('') : '<div class="empty">곧 마감인 항목이 없어요 👍</div>';
 const evts=S.get('events').filter(e=>dateStr(e.date)===ts);
 const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
@@ -583,7 +587,7 @@ sel.innerHTML=combined.length?combined.map(x=>x.h).join(''):'<div class="empty">
   updateCharMsg();
 }
 function quickHabit(id){ toggleHabitLog(id); renderHome(); }
-
+function quickTask(id){ toggleTask(id); }
 // ===== TASKS =====
 function setFilter(btn,f){
   curFilter=f;
@@ -594,9 +598,9 @@ function setFilter(btn,f){
 function renderTasks(){
   let tasks=S.get('tasks');
   if(curFilter==='done')      tasks=tasks.filter(t=>t.done);
-  else if(curFilter!=='all')  tasks=tasks.filter(t=>t.type===curFilter&&!t.done);
-  else                        tasks=tasks.filter(t=>!t.done);
-  tasks.sort((a,b)=>a.due>b.due?1:-1);
+  else if(curFilter!=='all')  tasks=tasks.filter(t=>t.type===curFilter);
+  // 'all'은 완료 포함 전체 표시
+  tasks.sort((a,b)=>{ if(a.done!==b.done) return a.done?1:-1; return a.due>b.due?1:-1; });
   const TI={assignment:'📝',exam:'📖',project:'💡',video:'🎬',other:'📌'};
   const PC={high:'badge-red',medium:'badge-yellow',low:'badge-green'};
   const PL={high:'높음',medium:'보통',low:'낮음'};
@@ -612,7 +616,7 @@ function renderTasks(){
       else            urg=`<span class="badge badge-gray">${dl}일 남음</span>`;
     }
     return `<div class="task-card${t.done?' done':''}">
-      <button class="task-check" onclick="toggleTask('${t.id}')">${t.done?'✅':'⬜'}</button>
+      <button class="task-check${t.done?' chk':''}" onclick="toggleTask('${t.id}')">✓</button>
       <div class="task-body">
         <div style="display:flex;justify-content:space-between;gap:8px">
           <div class="task-title${t.done?' crossed':''}">${TI[t.type]||'📌'} ${esc(t.title)}</div>
