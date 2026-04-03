@@ -218,8 +218,10 @@ textarea.inp{resize:none}
   <button class="tab-btn active" data-tab="home"     onclick="switchTab('home')">🏠 홈</button>
   <button class="tab-btn"        data-tab="tasks"    onclick="switchTab('tasks')">📚 과제·시험</button>
   <button class="tab-btn"        data-tab="schedule" onclick="switchTab('schedule')">📅 스케줄</button>
+  <button class="tab-btn" data-tab="timetable" onclick="switchTab('timetable')">🗓️ 시간표</button>
   <button class="tab-btn"        data-tab="habits"   onclick="switchTab('habits')">✅ 습관</button>
   <button class="tab-btn"        data-tab="goals"    onclick="switchTab('goals')">🎯 목표</button>
+  
 </nav>
 <!-- MAIN -->
 <main class="main">
@@ -276,6 +278,10 @@ textarea.inp{resize:none}
     </div>
     <div id="day-events" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
+  <div id="page-timetable" class="tab-page">
+  <div class="top-row"><span class="sec-title">🗓️ 수업 시간표</span></div>
+  <div id="timetable-list" style="display:flex;flex-direction:column;gap:8px"></div>
+</div>
   <!-- HABITS -->
   <div id="page-habits" class="tab-page">
     <div class="top-row"><span class="sec-title">✅ 습관 트래커</span><button class="btn-primary" onclick="openHabitModal()">+ 추가</button></div>
@@ -540,7 +546,7 @@ function applySettings(cfg){
   ['hdr-av','char-av','char-fab','cp-av'].forEach(id=>document.getElementById(id).textContent=av);
   document.getElementById('cp-name').textContent=nm;
 }
-function renderAll(){ renderHome(); renderTasks(); renderWeek(); renderHabits(); renderGoals(); }
+function renderAll(){ renderHome(); renderTasks(); renderWeek(); renderHabits(); renderGoals(); renderTimetable(); }
 
 // ===== TABS =====
 function switchTab(tab){
@@ -775,7 +781,35 @@ function delHabit(id){
   S.removeWhere('habit_logs','hid',id);
   renderHabits(); renderHome();
 }
-
+function renderTimetable(){
+  const classes=S.get('classes');
+  const el=document.getElementById('timetable-list');
+  const ORDER=['mon','tue','wed','thu','fri','sat','sun'];
+  const KR={mon:'월요일',tue:'화요일',wed:'수요일',thu:'목요일',fri:'금요일',sat:'토요일',sun:'일요일'};
+  const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
+  if(!classes.length){
+    el.innerHTML='<div class="card"><div class="card-body"><div class="empty">수업 데이터가 없어요. 🔄 눌러봐</div></div></div>';
+    return;
+  }
+  const byDay={};
+  classes.forEach(c=>{ if(!byDay[c.day]) byDay[c.day]=[]; byDay[c.day].push(c); });
+  Object.values(byDay).forEach(arr=>arr.sort((a,b)=>a.start>b.start?1:-1));
+  el.innerHTML=ORDER.filter(d=>byDay[d]).map(d=>{
+    const isToday=d===todayDay;
+    return `<div class="card" style="${isToday?'border:2px solid #6366f1':''}">
+      <div class="card-hdr"><h3>${isToday?'📍 ':''} ${KR[d]}</h3></div>
+      <div class="card-body">
+        ${byDay[d].map(c=>`<div class="row">
+          <div class="row-left">
+            <div class="row-title">${esc(c.name)}</div>
+            <div class="row-sub">${esc(c.room||'')}</div>
+          </div>
+          <span style="font-size:.75rem;color:#6366f1;font-weight:600;white-space:nowrap">${c.start}${c.end?' – '+c.end:''}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
 // ===== GOALS =====
 function renderGoals(){
   const goals=S.get('goals'), el=document.getElementById('goals-list');
