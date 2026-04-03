@@ -493,12 +493,18 @@ function weekStart(d){
   x.setDate(x.getDate()-(wd===0?6:wd-1));
   return x;
 }
+function parseDate(ds){
+  if(!ds) return new Date('invalid');
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(ds))) return new Date(ds+'T00:00:00');
+  const d=new Date(ds); return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+}
 function daysLeft(ds){
   const t=new Date(); t.setHours(0,0,0,0);
-  return Math.round((new Date(ds+'T00:00:00')-t)/864e5);
+  const due=parseDate(ds); due.setHours(0,0,0,0);
+  return Math.round((due-t)/864e5);
 }
 function fmtDate(ds){
-  const d=new Date(ds+'T00:00:00');
+  const d=parseDate(ds);
   return `${d.getMonth()+1}/${d.getDate()} (${['일','월','화','수','목','금','토'][d.getDay()]})`;
 }
 function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
@@ -540,7 +546,7 @@ function renderHome(){
   const tasks=S.get('tasks'), ts=todayStr();
   const pending=tasks.filter(t=>!t.done);
   const in3=new Date(); in3.setDate(in3.getDate()+3); in3.setHours(23,59,59);
-  const urgent=pending.filter(t=>new Date(t.due+'T00:00:00')<=in3).sort((a,b)=>a.due>b.due?1:-1);
+  const urgent=pending.filter(t=>parseDate(t.due)<=in3).sort((a,b)=>a.due>b.due?1:-1);
   document.getElementById('st-tasks').textContent=pending.length;
   document.getElementById('st-urgent').textContent=urgent.length;
   const uel=document.getElementById('home-urgent');
@@ -808,7 +814,7 @@ const PICK=arr=>arr[Math.floor(Math.random()*arr.length)];
 function updateCharMsg(){
   const cfg=S.obj('cfg'), tasks=S.get('tasks').filter(t=>!t.done), now=new Date(), hr=now.getHours();
   const ts=todayStr(), tom=new Date(); tom.setDate(tom.getDate()+1); tom.setHours(23,59,59);
-  const urgent=tasks.filter(t=>new Date(t.due+'T00:00:00')<=tom).sort((a,b)=>a.due>b.due?1:-1);
+  const urgent=tasks.filter(t=>parseDate(t.due)<=tom).sort((a,b)=>a.due>b.due?1:-1);
   const habits=S.get('habits'), logs=S.get('habit_logs'), dk=todayDayKey();
   const todayH=habits.filter(h=>Array.isArray(h.days)&&h.days.includes(dk)), doneH=todayH.filter(h=>logs.some(l=>l.hid===h.id&&l.date===ts));
   const nm=cfg.name?cfg.name+'야, ':'';
