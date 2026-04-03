@@ -498,6 +498,12 @@ function parseDate(ds){
   if(/^\d{4}-\d{2}-\d{2}$/.test(String(ds))) return new Date(ds+'T00:00:00');
   const d=new Date(ds); return new Date(d.getFullYear(),d.getMonth(),d.getDate());
 }
+function dateStr(ds){
+  if(!ds) return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(ds))) return String(ds).slice(0,10);
+  const d=new Date(ds);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}  
 function daysLeft(ds){
   const t=new Date(); t.setHours(0,0,0,0);
   const due=parseDate(ds); due.setHours(0,0,0,0);
@@ -555,7 +561,7 @@ function renderHome(){
     const b=dl<0?'<span class="badge badge-red">⚠️ 지남</span>':dl===0?'<span class="badge badge-red">오늘!</span>':dl===1?'<span class="badge badge-orange">내일</span>':`<span class="badge badge-yellow">${dl}일</span>`;
     return `<div class="row"><div class="row-left"><div class="row-title">${esc(t.title)}</div><div class="row-sub">${esc(t.subject||'과목 미입력')}</div></div>${b}</div>`;
   }).join('') : '<div class="empty">곧 마감인 항목이 없어요 👍</div>';
-const evts=S.get('events').filter(e=>e.date===ts);
+const evts=S.get('events').filter(e=>dateStr(e.date)===ts);
 const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
 const cls=S.get('classes').filter(c=>c.day===todayDay);
 const combined=[
@@ -669,9 +675,9 @@ function renderWeek(){
   const dn=['월','화','수','목','금','토','일'];
   document.getElementById('week-grid').innerHTML=dn.map((d,i)=>{
     const dt=new Date(start); dt.setDate(dt.getDate()+i);
-    const ds=dt.toISOString().split('T')[0];
+    const ds=dateStr(dt);
     const isToday=dt.getTime()===today.getTime(), isSel=ds===selDay;
-    const cnt=events.filter(e=>e.date===ds).length;
+    const cnt=events.filter(e=>dateStr(e.date)===ds).length;
     return `<div class="day-col${isSel?' sel':''}" onclick="selectDay('${ds}')">
       <span class="day-name">${d}</span>
       <span class="day-num${isToday?' today':isSel?' sel-num':''}">${dt.getDate()}</span>
@@ -683,7 +689,7 @@ function renderWeek(){
 function selectDay(ds){ selDay=ds; renderWeek(); }
 function shiftWeek(dir){ curWeekDate.setDate(curWeekDate.getDate()+dir*7); renderWeek(); }
 function renderDayEvents(){
-  const events=S.get('events').filter(e=>e.date===selDay).sort((a,b)=>(a.start||'')>(b.start||'')?1:-1);
+  const events=S.get('events').filter(e=>dateStr(e.date)===selDay).sort((a,b)=>(a.start||'')>(b.start||'')?1:-1);
   const d=new Date(selDay+'T00:00:00');
   const el=document.getElementById('day-events');
   const hdr=`<div style="font-size:.85rem;font-weight:600;color:#475569">${d.getMonth()+1}월 ${d.getDate()}일 (${['일','월','화','수','목','금','토'][d.getDay()]}) 일정</div>`;
