@@ -431,24 +431,23 @@ const S = {
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
 
   // GAS에서 전체 데이터 불러오기
-S.loadAll = async function() {
-  showSync('loading');
-  try {
-    const r = await fetch(GAS_URL + '?action=getAll', { cache: 'no-store' });
-    const d = await r.json();
-    
-    // 데이터 매핑
-    ['tasks','events','habits','habit_logs','goals','classes'].forEach(k => {
-      this.data[k] = Array.isArray(d[k]) ? d[k] : [];
-    });
-
-    showSync('ok');
-    renderAll(); // 이 안에서 renderTimetable()이 실행됩니다.
-  } catch(e) {
-    console.error('동기화 실패:', e);
-    showSync('err', e.message);
-  }
-};
+  async loadAll() {
+    showSync('loading');
+    try {
+      const r = await fetch(GAS_URL + '?action=getAll', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      if (d.error) throw new Error(d.error);
+     ['tasks','events','habits','habit_logs','goals','classes'].forEach(k => {
+        this.data[k] = Array.isArray(d[k]) ? d[k] : [];
+      });
+      showSync('ok');
+      renderAll();
+    } catch(e) {
+      console.error('동기화 실패:', e);
+      showSync('err', e.message);
+    }
+  },
 
   // GAS에 POST 요청
   async post(payload) {
@@ -528,20 +527,19 @@ function esc(s){ const d=document.createElement('div'); d.textContent=s||''; ret
 function todayDayKey(){ const d=new Date().getDay(); return DAYS[d===0?6:d-1]; }
 
 // ===== INIT =====
-async function init(){
-  const now = new Date();
-  const wkn = ['일','월','화','수','목','금','토'];
-  document.getElementById('hdr-date').textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${wkn[now.getDay()]})`;
-  document.getElementById('habit-today-date').textContent = `${now.getMonth()+1}월 ${now.getDate()}일`;
-  
-  const cfg = S.obj('cfg');
-  selAvatar = cfg.avatar || '🐱';
+function init(){
+  const now=new Date();
+  const wkn=['일','월','화','수','목','금','토'];
+  document.getElementById('hdr-date').textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${wkn[now.getDay()]})`;
+  document.getElementById('habit-today-date').textContent=`${now.getMonth()+1}월 ${now.getDate()}일`;
+  document.getElementById('t-due').value=todayStr();
+  document.getElementById('e-date').value=todayStr();
+  const cfg=S.obj('cfg');
+  selAvatar=cfg.avatar||'🐱';
   applySettings(cfg);
-
-  // 중요: 데이터를 완전히 다 불러온 후 렌더링 시작
-  await S.loadAll(); 
-  
-  setInterval(() => S.loadAll(), 180000); 
+  renderAll();       // 빈 상태로 먼저 렌더
+  S.loadAll();       // GAS에서 실제 데이터 로드
+  setInterval(()=>S.loadAll(), 180000); // 3분마다 자동 동기화
 }
 function applySettings(cfg){
   const av=cfg.avatar||'🐱', nm=cfg.charName||'비서';
