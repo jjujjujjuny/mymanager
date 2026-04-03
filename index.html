@@ -5,10 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>현준의 일정관리</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🦉</text></svg>">
-
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🦉</text></svg>">
-
-
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Malgun Gothic','Apple SD Gothic Neo','Segoe UI',sans-serif;background:#f1f5f9;min-height:100vh;color:#334155}
@@ -16,7 +13,8 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
 input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
-
+/* SYNC BAR */
+#sync-bar{position:fixed;top:0;left:0;right:0;text-align:center;font-size:.72rem;font-weight:600;color:#fff;padding:5px 12px;z-index:200;display:none}
 /* HEADER */
 .hdr{background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:30;padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
 .hdr-left{display:flex;align-items:center;gap:10px}
@@ -26,19 +24,16 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .hdr-btns{display:flex;gap:4px}
 .icon-btn{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#94a3b8;transition:background .15s}
 .icon-btn:hover{background:#f1f5f9;color:#64748b}
-
 /* TABS */
 .tabs{background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:57px;z-index:20;display:flex;overflow-x:auto;padding:0 8px}
 .tabs::-webkit-scrollbar{height:0}
 .tab-btn{padding:12px 16px;font-size:.8rem;font-weight:500;color:#94a3b8;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s}
 .tab-btn:hover{color:#6366f1}
 .tab-btn.active{color:#6366f1;border-bottom-color:#6366f1}
-
 /* MAIN */
 .main{max-width:680px;margin:0 auto;padding:16px;padding-bottom:100px;display:flex;flex-direction:column;gap:14px}
 .tab-page{display:none;flex-direction:column;gap:14px}
 .tab-page.show{display:flex}
-
 /* CARDS */
 .card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden}
 .card-hdr{padding:14px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:between}
@@ -47,20 +42,17 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .card-body{padding:12px 18px}
 .link-sm{font-size:.7rem;color:#6366f1;text-decoration:none}
 .link-sm:hover{text-decoration:underline}
-
 /* GRADIENT CARD */
 .grad-card{background:linear-gradient(135deg,#6366f1,#9333ea);border-radius:16px;padding:20px;color:#fff;display:flex;gap:16px;align-items:flex-start}
 .grad-card .avatar{font-size:3rem;line-height:1;flex-shrink:0}
 .grad-card .greeting{font-size:.8rem;color:#c7d2fe;font-weight:500}
 .grad-card .msg{font-size:.9rem;font-weight:600;margin-top:4px;line-height:1.4}
-
 /* STATS */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .stat{background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:14px;text-align:center}
 .stat-num{font-size:1.5rem;font-weight:700}
 .stat-lbl{font-size:.65rem;color:#94a3b8;margin-top:4px}
 .c-indigo{color:#6366f1}.c-orange{color:#f97316}.c-green{color:#10b981}
-
 /* ROWS */
 .row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f8fafc}
 .row:last-child{border-bottom:none}
@@ -68,7 +60,6 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .row-title{font-size:.85rem;font-weight:500;color:#1e293b}
 .row-sub{font-size:.7rem;color:#94a3b8;margin-top:2px}
 .empty{font-size:.8rem;color:#94a3b8;padding:10px 0}
-
 /* BADGES */
 .badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.65rem;font-weight:600}
 .badge-red{background:#fee2e2;color:#dc2626}
@@ -76,17 +67,15 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .badge-yellow{background:#fef9c3;color:#ca8a04}
 .badge-green{background:#dcfce7;color:#16a34a}
 .badge-indigo{background:#ede9fe;color:#7c3aed}
+.badge-blue{background:#dbeafe;color:#2563eb}
 .badge-gray{background:#f1f5f9;color:#64748b}
-
 /* SECTION TITLE */
 .sec-title{font-size:.95rem;font-weight:700;color:#1e293b}
-
 /* BUTTONS */
 .btn-primary{background:#6366f1;color:#fff;padding:8px 16px;border-radius:12px;font-size:.8rem;font-weight:600;transition:background .15s}
 .btn-primary:hover{background:#4f46e5}
 .btn-outline{border:1px solid #e2e8f0;color:#64748b;padding:10px;border-radius:12px;font-size:.8rem;width:100%;transition:background .15s}
 .btn-outline:hover{background:#f8fafc}
-
 /* FILTERS */
 .filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
 .filters::-webkit-scrollbar{height:0}
@@ -94,7 +83,6 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .filt.on{background:#ede9fe;color:#7c3aed}
 .filt.off{background:#f1f5f9;color:#64748b}
 .filt.off:hover{background:#e2e8f0}
-
 /* TASK CARD */
 .task-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:14px;display:flex;gap:12px;align-items:flex-start}
 .task-card.done{opacity:.55}
@@ -105,11 +93,10 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .task-title.crossed{text-decoration:line-through;color:#94a3b8}
 .task-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
 .task-date{font-size:.7rem;color:#94a3b8;margin-top:4px}
-.task-note{font-size:.7rem;color:#64748b;background:#f8fafc;padding:6px 10px;border-radius:8px;margin-top:6px}
+.task-note{font-size:.7rem;color:#64748b;background:#f8fafc;padding:6px 10px;border-radius:8px;margin-top:6px;white-space:pre-line}
 .task-actions{display:flex;gap:2px;flex-shrink:0}
 .act-btn{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;transition:color .15s,background .15s}
 .act-btn:hover{background:#f1f5f9;color:#64748b}
-
 /* WEEK GRID */
 .week-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #f1f5f9}
 .week-lbl{font-size:.8rem;font-weight:600;color:#475569}
@@ -125,7 +112,6 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .day-num.sel-num{background:#e0e7ff;color:#4f46e5}
 .day-dot{width:5px;height:5px;border-radius:50%;background:#6366f1}
 .day-dot.hidden{visibility:hidden}
-
 /* HABIT CHECK */
 .habit-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f8fafc}
 .habit-row:last-child{border-bottom:none}
@@ -134,7 +120,6 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .habit-name{font-size:.85rem;font-weight:500;color:#1e293b;flex:1}
 .habit-name.done{text-decoration:line-through;color:#94a3b8}
 .habit-days{font-size:.65rem;color:#94a3b8;margin-top:2px}
-
 /* GOAL CARD */
 .goal-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden}
 .goal-body{padding:14px 16px}
@@ -155,7 +140,6 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .sub-text.done{text-decoration:line-through;color:#94a3b8}
 .add-sub{font-size:.75rem;color:#818cf8;margin-top:6px;display:inline-block}
 .add-sub:hover{text-decoration:underline;color:#6366f1}
-
 /* FLOAT CHARACTER */
 .char-wrap{position:fixed;bottom:20px;right:16px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 .char-panel{background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.12);border:1px solid #e2e8f0;width:280px;overflow:hidden;animation:slideUp .2s ease}
@@ -169,7 +153,6 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .char-fab{width:54px;height:54px;background:linear-gradient(135deg,#6366f1,#9333ea);border-radius:50%;box-shadow:0 4px 15px rgba(99,102,241,.4);font-size:1.75rem;display:flex;align-items:center;justify-content:center;transition:transform .15s}
 .char-fab:hover{transform:scale(1.08)}
 .char-fab:active{transform:scale(.95)}
-
 /* MODALS */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;align-items:flex-end;justify-content:center;padding:16px}
 .modal-bg.open{display:flex}
@@ -187,7 +170,6 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .btn-cancel:hover{background:#f8fafc}
 .btn-save{background:#6366f1;color:#fff}
 .btn-save:hover{background:#4f46e5}
-
 /* ICON/AVATAR PICKERS */
 .picker-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .pick-btn{width:38px;height:38px;border-radius:10px;font-size:1.3rem;display:flex;align-items:center;justify-content:center;transition:background .15s}
@@ -197,22 +179,20 @@ input,select,textarea{font-family:inherit;font-size:.875rem;color:#334155}
 .dp-btn{width:36px;height:36px;border-radius:50%;font-size:.75rem;font-weight:700;transition:background .15s,color .15s}
 .dp-btn.on{background:#6366f1;color:#fff}
 .dp-btn.off{background:#f1f5f9;color:#64748b}
-
 /* IMPORT/EXPORT */
 .import-msg{font-size:.75rem;margin-top:6px;display:none}
 .export-ok{font-size:.75rem;color:#10b981;text-align:center;margin-top:6px;display:none}
 .divider{border:none;border-top:1px solid #f1f5f9;margin:14px 0}
 textarea.inp{resize:none}
-
 /* ANIMATIONS */
 @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
-
 /* TOP ROW UTILS */
 .top-row{display:flex;align-items:center;justify-content:space-between}
 </style>
 </head>
 <body>
-
+<!-- 동기화 상태 표시줄 -->
+<div id="sync-bar"></div>
 <!-- HEADER -->
 <header class="hdr">
   <div class="hdr-left">
@@ -223,11 +203,11 @@ textarea.inp{resize:none}
     </div>
   </div>
   <div class="hdr-btns">
+    <button class="icon-btn" onclick="S.loadAll()" title="동기화">🔄</button>
     <button class="icon-btn" onclick="openImport()" title="데이터 가져오기">📥</button>
     <button class="icon-btn" onclick="openSettings()">⚙️</button>
   </div>
 </header>
-
 <!-- TABS -->
 <nav class="tabs">
   <button class="tab-btn active" data-tab="home"     onclick="switchTab('home')">🏠 홈</button>
@@ -236,10 +216,8 @@ textarea.inp{resize:none}
   <button class="tab-btn"        data-tab="habits"   onclick="switchTab('habits')">✅ 습관</button>
   <button class="tab-btn"        data-tab="goals"    onclick="switchTab('goals')">🎯 목표</button>
 </nav>
-
 <!-- MAIN -->
 <main class="main">
-
   <!-- HOME -->
   <div id="page-home" class="tab-page show">
     <div class="grad-card">
@@ -267,7 +245,6 @@ textarea.inp{resize:none}
       <div class="card-body" id="home-habits"></div>
     </div>
   </div>
-
   <!-- TASKS -->
   <div id="page-tasks" class="tab-page">
     <div class="top-row"><span class="sec-title">📚 과제 & 시험</span><button class="btn-primary" onclick="openTaskModal()">+ 추가</button></div>
@@ -275,12 +252,12 @@ textarea.inp{resize:none}
       <button class="filt on"  data-f="all"        onclick="setFilter(this,'all')">전체</button>
       <button class="filt off" data-f="assignment"  onclick="setFilter(this,'assignment')">📝 과제</button>
       <button class="filt off" data-f="exam"        onclick="setFilter(this,'exam')">📖 시험</button>
+      <button class="filt off" data-f="video"       onclick="setFilter(this,'video')">🎬 강의영상</button>
       <button class="filt off" data-f="project"     onclick="setFilter(this,'project')">💡 프로젝트</button>
       <button class="filt off" data-f="done"        onclick="setFilter(this,'done')">✅ 완료</button>
     </div>
     <div id="tasks-list" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
-
   <!-- SCHEDULE -->
   <div id="page-schedule" class="tab-page">
     <div class="top-row"><span class="sec-title">📅 스케줄</span><button class="btn-primary" onclick="openEventModal()">+ 추가</button></div>
@@ -294,7 +271,6 @@ textarea.inp{resize:none}
     </div>
     <div id="day-events" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
-
   <!-- HABITS -->
   <div id="page-habits" class="tab-page">
     <div class="top-row"><span class="sec-title">✅ 습관 트래커</span><button class="btn-primary" onclick="openHabitModal()">+ 추가</button></div>
@@ -304,15 +280,12 @@ textarea.inp{resize:none}
     </div>
     <div id="habits-all" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
-
   <!-- GOALS -->
   <div id="page-goals" class="tab-page">
     <div class="top-row"><span class="sec-title">🎯 목표</span><button class="btn-primary" onclick="openGoalModal()">+ 추가</button></div>
     <div id="goals-list" style="display:flex;flex-direction:column;gap:10px"></div>
   </div>
-
 </main>
-
 <!-- FLOATING CHARACTER -->
 <div class="char-wrap">
   <div class="char-panel" id="char-panel" style="display:none">
@@ -324,9 +297,7 @@ textarea.inp{resize:none}
   </div>
   <button class="char-fab" id="char-fab" onclick="toggleChar()">🐱</button>
 </div>
-
 <!-- ===== MODALS ===== -->
-
 <!-- Task -->
 <div id="m-task" class="modal-bg">
   <div class="modal">
@@ -338,6 +309,7 @@ textarea.inp{resize:none}
         <select id="t-type" class="inp">
           <option value="assignment">📝 과제</option>
           <option value="exam">📖 시험</option>
+          <option value="video">🎬 강의영상</option>
           <option value="project">💡 프로젝트</option>
           <option value="other">기타</option>
         </select>
@@ -358,7 +330,6 @@ textarea.inp{resize:none}
     </div>
   </div>
 </div>
-
 <!-- Event -->
 <div id="m-event" class="modal-bg">
   <div class="modal">
@@ -376,7 +347,6 @@ textarea.inp{resize:none}
     </div>
   </div>
 </div>
-
 <!-- Habit -->
 <div id="m-habit" class="modal-bg">
   <div class="modal">
@@ -390,7 +360,6 @@ textarea.inp{resize:none}
     </div>
   </div>
 </div>
-
 <!-- Goal -->
 <div id="m-goal" class="modal-bg">
   <div class="modal">
@@ -404,12 +373,11 @@ textarea.inp{resize:none}
     </div>
   </div>
 </div>
-
 <!-- Import/Export -->
 <div id="m-import" class="modal-bg">
   <div class="modal">
     <h3>📥 데이터 가져오기</h3>
-    <p style="font-size:.78rem;color:#94a3b8;margin-bottom:12px">클로드가 만들어준 JSON을 붙여넣고 적용 누르면 돼</p>
+    <p style="font-size:.78rem;color:#94a3b8;margin-bottom:12px">JSON을 붙여넣으면 구글 시트에도 자동 동기화돼</p>
     <textarea id="import-json" class="inp" rows="7" placeholder='{"tasks":[...],"events":[...]}'></textarea>
     <div id="import-msg" class="import-msg"></div>
     <div class="modal-btns">
@@ -417,12 +385,11 @@ textarea.inp{resize:none}
       <button class="btn-save"   onclick="doImport()">적용하기</button>
     </div>
     <hr class="divider">
-    <p style="font-size:.75rem;color:#94a3b8;margin-bottom:8px">현재 데이터 내보내기 (클로드에게 공유용)</p>
+    <p style="font-size:.75rem;color:#94a3b8;margin-bottom:8px">현재 데이터 내보내기</p>
     <button class="btn-outline" onclick="doExport()">📋 현재 데이터 복사</button>
     <div id="export-ok" class="export-ok">✅ 클립보드에 복사됐어!</div>
   </div>
 </div>
-
 <!-- Settings -->
 <div id="m-settings" class="modal-bg">
   <div class="modal">
@@ -436,21 +403,84 @@ textarea.inp{resize:none}
     </div>
   </div>
 </div>
-
 <script>
-// ===== STORAGE =====
+// ===== GAS 설정 =====
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby_7u9hBgzU6wUhlgpTN7pbNqAOY6TiFkH3LKs0FOxklVkl2Vgtql2HBFJwZu_3yBAt3Q/exec';
+
+// ===== STORAGE (GAS 연동 + cfg는 기기별 로컬 저장) =====
 const S = {
-  get(k,d=[]){ try{return JSON.parse(localStorage.getItem(k))??d}catch{return d} },
-  set(k,v)   { localStorage.setItem(k,JSON.stringify(v)) },
-  obj(k,d={}) { try{return JSON.parse(localStorage.getItem(k))??d}catch{return d} }
+  // 인메모리 캐시 (GAS에서 불러온 데이터 보관)
+  data: { tasks:[], events:[], habits:[], habit_logs:[], goals:[] },
+
+  // in-memory 캐시에서 읽기 (렌더링 함수들이 사용)
+  get(k) { return this.data[k] ? [...this.data[k]] : []; },
+
+  // 설정(cfg)은 기기별로 다르게 → localStorage 유지
+  obj(k, d={}) { try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch{ return d; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
+
+  // GAS에서 전체 데이터 불러오기
+  async loadAll() {
+    showSync('loading');
+    try {
+      const r = await fetch(GAS_URL + '?action=getAll', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      if (d.error) throw new Error(d.error);
+      ['tasks','events','habits','habit_logs','goals'].forEach(k => {
+        this.data[k] = Array.isArray(d[k]) ? d[k] : [];
+      });
+      showSync('ok');
+      renderAll();
+    } catch(e) {
+      console.error('동기화 실패:', e);
+      showSync('err', e.message);
+    }
+  },
+
+  // GAS에 POST 요청
+  async post(payload) {
+    try {
+      await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+    } catch(e) {
+      console.error('저장 실패:', e);
+      showSync('err', '저장 실패');
+    }
+  },
+
+  // 추가/수정 (id 기준 upsert)
+  upsert(sheet, item) { return this.post({ action:'upsert', sheet, data: item }); },
+
+  // id로 삭제
+  remove(sheet, id) { return this.post({ action:'delete', sheet, id }); },
+
+  // 특정 필드 값으로 삭제 (예: hid로 habit_logs 삭제)
+  removeWhere(sheet, field, value) { return this.post({ action:'deleteWhere', sheet, field, value }); },
+
+  // 습관 로그를 hid+date 조합으로 삭제
+  removeHabitLog(hid, date) { return this.post({ action:'deleteHabitLog', hid, date }); }
 };
+
+// 동기화 상태 표시
+function showSync(state, detail) {
+  const el = document.getElementById('sync-bar');
+  const cfg = {
+    loading: { text:'☁️ 동기화 중...', bg:'#6366f1', dur:0 },
+    ok:      { text:'✅ 동기화 완료',   bg:'#10b981', dur:1500 },
+    err:     { text:'⚠️ ' + (detail||'연결 실패'), bg:'#ef4444', dur:5000 }
+  }[state];
+  if (!cfg) return;
+  el.textContent = cfg.text;
+  el.style.background = cfg.bg;
+  el.style.display = 'block';
+  if (cfg.dur) setTimeout(() => el.style.display = 'none', cfg.dur);
+}
 
 // ===== STATE =====
 const DAYS=['mon','tue','wed','thu','fri','sat','sun'];
 const DKR={mon:'월',tue:'화',wed:'수',thu:'목',fri:'금',sat:'토',sun:'일'};
 const ICONS=['📚','🏃','💧','😴','🧘','✍️','🎵','💪','🍎','☕','📖','🎯','🖥️','🎨','🐾','🌱'];
 const AVATARS=['🐱','🐶','🦊','🐧','🦁','🐻','🐼','🐨','🦋','⭐','🌸','🔮','🐸','🐯','🦄','🌙'];
-
 let curFilter='all', selDay=todayStr(), selIcon='📚', selDays=['mon','tue','wed','thu','fri'];
 let selAvatar='🐱', editTaskId=null, charOpen=false;
 let curWeekDate=weekStart(new Date());
@@ -484,15 +514,15 @@ function init(){
   const cfg=S.obj('cfg');
   selAvatar=cfg.avatar||'🐱';
   applySettings(cfg);
-  renderAll();
+  renderAll();       // 빈 상태로 먼저 렌더
+  S.loadAll();       // GAS에서 실제 데이터 로드
+  setInterval(()=>S.loadAll(), 180000); // 3분마다 자동 동기화
 }
-
 function applySettings(cfg){
   const av=cfg.avatar||'🐱', nm=cfg.charName||'비서';
   ['hdr-av','char-av','char-fab','cp-av'].forEach(id=>document.getElementById(id).textContent=av);
   document.getElementById('cp-name').textContent=nm;
 }
-
 function renderAll(){ renderHome(); renderTasks(); renderWeek(); renderHabits(); renderGoals(); }
 
 // ===== TABS =====
@@ -510,33 +540,27 @@ function renderHome(){
   const pending=tasks.filter(t=>!t.done);
   const in3=new Date(); in3.setDate(in3.getDate()+3); in3.setHours(23,59,59);
   const urgent=pending.filter(t=>new Date(t.due+'T00:00:00')<=in3).sort((a,b)=>a.due>b.due?1:-1);
-
   document.getElementById('st-tasks').textContent=pending.length;
   document.getElementById('st-urgent').textContent=urgent.length;
-
   const uel=document.getElementById('home-urgent');
   uel.innerHTML=urgent.length?urgent.slice(0,3).map(t=>{
     const dl=daysLeft(t.due);
     const b=dl<0?'<span class="badge badge-red">⚠️ 지남</span>':dl===0?'<span class="badge badge-red">오늘!</span>':dl===1?'<span class="badge badge-orange">내일</span>':`<span class="badge badge-yellow">${dl}일</span>`;
     return `<div class="row"><div class="row-left"><div class="row-title">${esc(t.title)}</div><div class="row-sub">${esc(t.subject||'과목 미입력')}</div></div>${b}</div>`;
   }).join('') : '<div class="empty">곧 마감인 항목이 없어요 👍</div>';
-
   const evts=S.get('events').filter(e=>e.date===ts).sort((a,b)=>(a.start||'')>(b.start||'')?1:-1);
   const sel=document.getElementById('home-sched');
   sel.innerHTML=evts.length?evts.map(e=>`<div class="row"><span class="badge badge-indigo">${e.start||'종일'}</span><span style="margin-left:10px;font-size:.85rem">${esc(e.title)}</span></div>`).join(''):'<div class="empty">오늘 일정이 없어요</div>';
-
   const habits=S.get('habits'), logs=S.get('habit_logs'), dk=todayDayKey();
-  const todayH=habits.filter(h=>h.days.includes(dk));
+  const todayH=habits.filter(h=>Array.isArray(h.days)&&h.days.includes(dk));
   const doneH=todayH.filter(h=>logs.some(l=>l.hid===h.id&&l.date===ts));
   const pct=todayH.length?Math.round(doneH.length/todayH.length*100):0;
   document.getElementById('st-habit').textContent=pct+'%';
-
   const hel=document.getElementById('home-habits');
   hel.innerHTML=todayH.length?todayH.map(h=>{
     const done=logs.some(l=>l.hid===h.id&&l.date===ts);
     return `<div class="row"><button onclick="quickHabit('${h.id}')" style="font-size:1.3rem;margin-right:10px">${done?'✅':'⬜'}</button><span style="font-size:.85rem;${done?'text-decoration:line-through;color:#94a3b8':''}">${h.icon} ${esc(h.name)}</span></div>`;
   }).join(''):'<div class="empty">오늘 설정된 습관이 없어요</div>';
-
   updateCharMsg();
 }
 function quickHabit(id){ toggleHabitLog(id); renderHome(); }
@@ -554,7 +578,7 @@ function renderTasks(){
   else if(curFilter!=='all')  tasks=tasks.filter(t=>t.type===curFilter&&!t.done);
   else                        tasks=tasks.filter(t=>!t.done);
   tasks.sort((a,b)=>a.due>b.due?1:-1);
-  const TI={assignment:'📝',exam:'📖',project:'💡',other:'📌'};
+  const TI={assignment:'📝',exam:'📖',project:'💡',video:'🎬',other:'📌'};
   const PC={high:'badge-red',medium:'badge-yellow',low:'badge-green'};
   const PL={high:'높음',medium:'보통',low:'낮음'};
   const el=document.getElementById('tasks-list');
@@ -563,7 +587,7 @@ function renderTasks(){
     const dl=daysLeft(t.due);
     let urg='';
     if(!t.done){
-      if(dl<0)      urg='<span class="badge badge-red">⚠️ 마감 지남</span>';
+      if(dl<0)        urg='<span class="badge badge-red">⚠️ 마감 지남</span>';
       else if(dl===0) urg='<span class="badge badge-red">오늘 마감!</span>';
       else if(dl<=2)  urg=`<span class="badge badge-orange">${dl}일 남음</span>`;
       else            urg=`<span class="badge badge-gray">${dl}일 남음</span>`;
@@ -580,7 +604,7 @@ function renderTasks(){
         </div>
         <div class="task-meta">
           ${t.subject?`<span style="font-size:.72rem;color:#94a3b8">${esc(t.subject)}</span>`:''}
-          <span class="badge ${PC[t.priority]}">${PL[t.priority]}</span>
+          <span class="badge ${PC[t.priority]||'badge-gray'}">${PL[t.priority]||t.priority}</span>
           ${urg}
         </div>
         <div class="task-date">📅 ${fmtDate(t.due)}</div>
@@ -591,9 +615,37 @@ function renderTasks(){
 }
 function openTaskModal(){ editTaskId=null; document.getElementById('m-task-ttl').textContent='과제 / 시험 추가'; ['t-title','t-subj','t-notes'].forEach(id=>document.getElementById(id).value=''); document.getElementById('t-type').value='assignment'; document.getElementById('t-prio').value='medium'; document.getElementById('t-due').value=todayStr(); openModal('m-task'); }
 function openEditTask(id){ const t=S.get('tasks').find(x=>x.id===id); if(!t)return; editTaskId=id; document.getElementById('m-task-ttl').textContent='과제 / 시험 수정'; document.getElementById('t-title').value=t.title; document.getElementById('t-subj').value=t.subject||''; document.getElementById('t-type').value=t.type; document.getElementById('t-prio').value=t.priority; document.getElementById('t-due').value=t.due; document.getElementById('t-notes').value=t.notes||''; openModal('m-task'); }
-function saveTask(){ const title=document.getElementById('t-title').value.trim(), due=document.getElementById('t-due').value; if(!title||!due){alert('제목과 마감일은 필수야!');return;} const tasks=S.get('tasks'); const obj={title,subject:document.getElementById('t-subj').value.trim(),type:document.getElementById('t-type').value,priority:document.getElementById('t-prio').value,due,notes:document.getElementById('t-notes').value.trim(),done:false}; if(editTaskId){const i=tasks.findIndex(t=>t.id===editTaskId);if(i>-1)tasks[i]={...tasks[i],...obj};}else{tasks.push({id:Date.now()+'', ...obj, created:new Date().toISOString()});} S.set('tasks',tasks); closeModal('m-task'); renderTasks(); renderHome(); }
-function toggleTask(id){ const tasks=S.get('tasks'); const t=tasks.find(x=>x.id===id); if(t)t.done=!t.done; S.set('tasks',tasks); renderTasks(); renderHome(); }
-function delTask(id){ if(!confirm('삭제할까?'))return; S.set('tasks',S.get('tasks').filter(t=>t.id!==id)); renderTasks(); renderHome(); }
+
+function saveTask(){
+  const title=document.getElementById('t-title').value.trim(), due=document.getElementById('t-due').value;
+  if(!title||!due){alert('제목과 마감일은 필수야!');return;}
+  const fields={title,subject:document.getElementById('t-subj').value.trim(),type:document.getElementById('t-type').value,priority:document.getElementById('t-prio').value,due,notes:document.getElementById('t-notes').value.trim(),done:false};
+  const tasks=S.get('tasks');
+  let item;
+  if(editTaskId){
+    const i=tasks.findIndex(t=>t.id===editTaskId);
+    if(i>-1){tasks[i]={...tasks[i],...fields};item=tasks[i];}
+    S.data.tasks=tasks;
+  }else{
+    item={id:Date.now()+'', ...fields, created:new Date().toISOString()};
+    S.data.tasks=[...tasks,item];
+  }
+  if(item) S.upsert('tasks',item);
+  closeModal('m-task'); renderTasks(); renderHome();
+}
+function toggleTask(id){
+  const tasks=S.get('tasks'), t=tasks.find(x=>x.id===id);
+  if(t) t.done=!t.done;
+  S.data.tasks=tasks;
+  if(t) S.upsert('tasks',t);
+  renderTasks(); renderHome();
+}
+function delTask(id){
+  if(!confirm('삭제할까?'))return;
+  S.data.tasks=S.get('tasks').filter(t=>t.id!==id);
+  S.remove('tasks',id);
+  renderTasks(); renderHome();
+}
 
 // ===== SCHEDULE =====
 function renderWeek(){
@@ -634,31 +686,72 @@ function renderDayEvents(){
   </div>`).join(''):`<div class="card"><div class="card-body"><div class="empty">이 날 일정이 없어요</div></div></div>`);
 }
 function openEventModal(){ document.getElementById('e-title').value=''; document.getElementById('e-date').value=selDay; document.getElementById('e-start').value=''; document.getElementById('e-end').value=''; document.getElementById('e-desc').value=''; openModal('m-event'); }
-function saveEvent(){ const title=document.getElementById('e-title').value.trim(), date=document.getElementById('e-date').value; if(!title||!date){alert('제목과 날짜는 필수야!');return;} const events=S.get('events'); events.push({id:Date.now()+'',title,date,start:document.getElementById('e-start').value,end:document.getElementById('e-end').value,desc:document.getElementById('e-desc').value.trim()}); S.set('events',events); closeModal('m-event'); renderWeek(); renderHome(); }
-function delEvent(id){ if(!confirm('삭제할까?'))return; S.set('events',S.get('events').filter(e=>e.id!==id)); renderWeek(); renderHome(); }
+function saveEvent(){
+  const title=document.getElementById('e-title').value.trim(), date=document.getElementById('e-date').value;
+  if(!title||!date){alert('제목과 날짜는 필수야!');return;}
+  const item={id:Date.now()+'',title,date,start:document.getElementById('e-start').value,end:document.getElementById('e-end').value,desc:document.getElementById('e-desc').value.trim()};
+  S.data.events=[...S.get('events'),item];
+  S.upsert('events',item);
+  closeModal('m-event'); renderWeek(); renderHome();
+}
+function delEvent(id){
+  if(!confirm('삭제할까?'))return;
+  S.data.events=S.get('events').filter(e=>e.id!==id);
+  S.remove('events',id);
+  renderWeek(); renderHome();
+}
 
 // ===== HABITS =====
 function renderHabits(){
   const habits=S.get('habits'), logs=S.get('habit_logs'), ts=todayStr(), dk=todayDayKey();
-  const todayH=habits.filter(h=>h.days.includes(dk));
+  const todayH=habits.filter(h=>Array.isArray(h.days)&&h.days.includes(dk));
   const tel=document.getElementById('habits-today');
   tel.innerHTML=todayH.length?todayH.map(h=>{
     const done=logs.some(l=>l.hid===h.id&&l.date===ts);
-    return `<div class="habit-row"><button class="habit-check" onclick="checkHabit('${h.id}')">${done?'✅':'⬜'}</button><div><div class="habit-name${done?' done':''}">${h.icon} ${esc(h.name)}</div><div class="habit-days">${h.days.map(d=>DKR[d]).join(' ')}</div></div><button class="act-btn" onclick="delHabit('${h.id}')">🗑️</button></div>`;
+    return `<div class="habit-row"><button class="habit-check" onclick="checkHabit('${h.id}')">${done?'✅':'⬜'}</button><div><div class="habit-name${done?' done':''}">${h.icon} ${esc(h.name)}</div><div class="habit-days">${(h.days||[]).map(d=>DKR[d]).join(' ')}</div></div><button class="act-btn" onclick="delHabit('${h.id}')">🗑️</button></div>`;
   }).join(''):'<div class="empty">오늘 설정된 습관이 없어요!</div>';
-  const others=habits.filter(h=>!h.days.includes(dk));
+  const others=habits.filter(h=>!Array.isArray(h.days)||!h.days.includes(dk));
   const ael=document.getElementById('habits-all');
-  ael.innerHTML=others.length?`<div class="card"><div class="card-hdr"><h3>다른 날 습관</h3></div><div class="card-body">${others.map(h=>`<div class="row"><span style="font-size:.85rem">${h.icon} ${esc(h.name)}</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:.7rem;color:#94a3b8">${h.days.map(d=>DKR[d]).join(' ')}</span><button class="act-btn" onclick="delHabit('${h.id}')">🗑️</button></div></div>`).join('')}</div></div>`:'';
+  ael.innerHTML=others.length?`<div class="card"><div class="card-hdr"><h3>다른 날 습관</h3></div><div class="card-body">${others.map(h=>`<div class="row"><span style="font-size:.85rem">${h.icon} ${esc(h.name)}</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:.7rem;color:#94a3b8">${(h.days||[]).map(d=>DKR[d]).join(' ')}</span><button class="act-btn" onclick="delHabit('${h.id}')">🗑️</button></div></div>`).join('')}</div></div>`:'';
 }
 function checkHabit(id){ toggleHabitLog(id); renderHabits(); renderHome(); }
-function toggleHabitLog(id){ const logs=S.get('habit_logs'), ts=todayStr(), i=logs.findIndex(l=>l.hid===id&&l.date===ts); if(i>-1)logs.splice(i,1);else logs.push({hid:id,date:ts}); S.set('habit_logs',logs); }
+function toggleHabitLog(id){
+  const logs=S.get('habit_logs'), ts=todayStr();
+  const i=logs.findIndex(l=>l.hid===id&&l.date===ts);
+  if(i>-1){
+    const removed=logs.splice(i,1)[0];
+    S.data.habit_logs=logs;
+    if(removed.id) S.remove('habit_logs',removed.id);
+    else S.removeHabitLog(id,ts);
+  }else{
+    const item={id:Date.now()+'',hid:id,date:ts};
+    logs.push(item);
+    S.data.habit_logs=logs;
+    S.upsert('habit_logs',item);
+  }
+}
 function openHabitModal(){ selIcon='📚'; selDays=['mon','tue','wed','thu','fri']; document.getElementById('h-name').value=''; buildIconGrid(); buildDayGrid(); openModal('m-habit'); }
 function buildIconGrid(){ document.getElementById('icon-grid').innerHTML=ICONS.map(ic=>`<button type="button" onclick="pickIcon('${ic}',this)" class="pick-btn${ic===selIcon?' sel':''}">${ic}</button>`).join(''); }
-function pickIcon(ic,btn){ selIcon=ic; document.querySelectorAll('.icon-grid .pick-btn, #icon-grid .pick-btn').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); }
+function pickIcon(ic,btn){ selIcon=ic; document.querySelectorAll('#icon-grid .pick-btn').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); }
 function buildDayGrid(){ document.getElementById('day-grid').innerHTML=DAYS.map(d=>`<button type="button" onclick="pickDay('${d}',this)" class="dp-btn ${selDays.includes(d)?'on':'off'}">${DKR[d]}</button>`).join(''); }
 function pickDay(d,btn){ if(selDays.includes(d))selDays=selDays.filter(x=>x!==d);else selDays.push(d); btn.className=`dp-btn ${selDays.includes(d)?'on':'off'}`; }
-function saveHabit(){ const name=document.getElementById('h-name').value.trim(); if(!name){alert('습관 이름을 입력해!');return;} if(!selDays.length){alert('최소 하루는 골라야 해!');return;} const habits=S.get('habits'); habits.push({id:Date.now()+'',name,icon:selIcon,days:[...selDays]}); S.set('habits',habits); closeModal('m-habit'); renderHabits(); renderHome(); }
-function delHabit(id){ if(!confirm('삭제할까?'))return; S.set('habits',S.get('habits').filter(h=>h.id!==id)); S.set('habit_logs',S.get('habit_logs').filter(l=>l.hid!==id)); renderHabits(); renderHome(); }
+function saveHabit(){
+  const name=document.getElementById('h-name').value.trim();
+  if(!name){alert('습관 이름을 입력해!');return;}
+  if(!selDays.length){alert('최소 하루는 골라야 해!');return;}
+  const item={id:Date.now()+'',name,icon:selIcon,days:[...selDays]};
+  S.data.habits=[...S.get('habits'),item];
+  S.upsert('habits',item);
+  closeModal('m-habit'); renderHabits(); renderHome();
+}
+function delHabit(id){
+  if(!confirm('삭제할까?'))return;
+  S.data.habits=S.get('habits').filter(h=>h.id!==id);
+  S.data.habit_logs=S.get('habit_logs').filter(l=>l.hid!==id);
+  S.remove('habits',id);
+  S.removeWhere('habit_logs','hid',id);
+  renderHabits(); renderHome();
+}
 
 // ===== GOALS =====
 function renderGoals(){
@@ -678,10 +771,36 @@ function renderGoals(){
   }).join(''):`<div class="card"><div class="card-body"><div class="empty" style="text-align:center;padding:20px">🎯 목표를 추가해보세요!</div></div></div>`;
 }
 function openGoalModal(){ document.getElementById('g-title').value=''; document.getElementById('g-desc').value=''; document.getElementById('g-dl').value=''; openModal('m-goal'); }
-function saveGoal(){ const title=document.getElementById('g-title').value.trim(); if(!title){alert('목표를 입력해!');return;} const goals=S.get('goals'); goals.push({id:Date.now()+'',title,desc:document.getElementById('g-desc').value.trim(),deadline:document.getElementById('g-dl').value,progress:0,subtasks:[]}); S.set('goals',goals); closeModal('m-goal'); renderGoals(); }
-function addSubtask(gid){ const text=prompt('세부 목표를 입력해:'); if(!text||!text.trim())return; const goals=S.get('goals'), g=goals.find(x=>x.id===gid); if(g){g.subtasks=g.subtasks||[];g.subtasks.push({id:Date.now()+'',text:text.trim(),done:false});} S.set('goals',goals); renderGoals(); }
-function toggleSub(gid,sid){ const goals=S.get('goals'), g=goals.find(x=>x.id===gid); if(g){const s=(g.subtasks||[]).find(x=>x.id===sid);if(s)s.done=!s.done;} S.set('goals',goals); renderGoals(); }
-function delGoal(id){ if(!confirm('목표를 삭제할까?'))return; S.set('goals',S.get('goals').filter(g=>g.id!==id)); renderGoals(); }
+function saveGoal(){
+  const title=document.getElementById('g-title').value.trim();
+  if(!title){alert('목표를 입력해!');return;}
+  const item={id:Date.now()+'',title,desc:document.getElementById('g-desc').value.trim(),deadline:document.getElementById('g-dl').value,progress:0,subtasks:[]};
+  S.data.goals=[...S.get('goals'),item];
+  S.upsert('goals',item);
+  closeModal('m-goal'); renderGoals();
+}
+function addSubtask(gid){
+  const text=prompt('세부 목표를 입력해:');
+  if(!text||!text.trim())return;
+  const goals=S.get('goals'), g=goals.find(x=>x.id===gid);
+  if(g){g.subtasks=g.subtasks||[];g.subtasks.push({id:Date.now()+'',text:text.trim(),done:false});}
+  S.data.goals=goals;
+  if(g) S.upsert('goals',g);
+  renderGoals();
+}
+function toggleSub(gid,sid){
+  const goals=S.get('goals'), g=goals.find(x=>x.id===gid);
+  if(g){const s=(g.subtasks||[]).find(x=>x.id===sid);if(s)s.done=!s.done;}
+  S.data.goals=goals;
+  if(g) S.upsert('goals',g);
+  renderGoals();
+}
+function delGoal(id){
+  if(!confirm('목표를 삭제할까?'))return;
+  S.data.goals=S.get('goals').filter(g=>g.id!==id);
+  S.remove('goals',id);
+  renderGoals();
+}
 
 // ===== CHARACTER =====
 const PICK=arr=>arr[Math.floor(Math.random()*arr.length)];
@@ -690,7 +809,7 @@ function updateCharMsg(){
   const ts=todayStr(), tom=new Date(); tom.setDate(tom.getDate()+1); tom.setHours(23,59,59);
   const urgent=tasks.filter(t=>new Date(t.due+'T00:00:00')<=tom).sort((a,b)=>a.due>b.due?1:-1);
   const habits=S.get('habits'), logs=S.get('habit_logs'), dk=todayDayKey();
-  const todayH=habits.filter(h=>h.days.includes(dk)), doneH=todayH.filter(h=>logs.some(l=>l.hid===h.id&&l.date===ts));
+  const todayH=habits.filter(h=>Array.isArray(h.days)&&h.days.includes(dk)), doneH=todayH.filter(h=>logs.some(l=>l.hid===h.id&&l.date===ts));
   const nm=cfg.name?cfg.name+'야, ':'';
   const hi=hr<12?`${nm}좋은 아침~`:hr<18?`${nm}안녕`:hr<22?`${nm}저녁이네`:`${nm}늦었는데`;
   let msg;
@@ -710,7 +829,7 @@ function toggleChar(){ charOpen?closeChar():openChar(); }
 function openChar(){ charOpen=true; updateCharMsg(); document.getElementById('char-panel').style.display='block'; }
 function closeChar(){ charOpen=false; document.getElementById('char-panel').style.display='none'; }
 
-// ===== SETTINGS =====
+// ===== SETTINGS (cfg는 기기별 localStorage) =====
 function openSettings(){ const cfg=S.obj('cfg'); document.getElementById('s-name').value=cfg.name||''; document.getElementById('s-char').value=cfg.charName||''; selAvatar=cfg.avatar||'🐱'; buildAvatarGrid(); openModal('m-settings'); }
 function buildAvatarGrid(){ document.getElementById('avatar-grid').innerHTML=AVATARS.map(a=>`<button type="button" onclick="pickAvatar('${a}',this)" class="pick-btn${a===selAvatar?' sel':''}">${a}</button>`).join(''); }
 function pickAvatar(a,btn){ selAvatar=a; document.querySelectorAll('#avatar-grid .pick-btn').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); }
@@ -725,7 +844,11 @@ function doImport(){
   ['tasks','events','habits','habit_logs','goals'].forEach(k=>{
     if(!Array.isArray(data[k]))return;
     const ex=S.get(k), ids=new Set(ex.map(x=>x.id));
-    const nw=data[k].filter(x=>!ids.has(x.id)); added+=nw.length; S.set(k,[...ex,...nw]);
+    const nw=data[k].filter(x=>!ids.has(x.id));
+    nw.forEach(item=>{ if(!item.id) item.id=Date.now()+Math.random()+''; });
+    added+=nw.length;
+    S.data[k]=[...ex,...nw];
+    nw.forEach(item=>S.upsert(k,item)); // 각 항목을 GAS에도 저장
   });
   if(data.cfg){const cur=S.obj('cfg');S.set('cfg',{...cur,...data.cfg});applySettings(S.obj('cfg'));}
   renderAll(); showIM(`완료! ${added}개 추가됐어 ✅`,'#10b981');
