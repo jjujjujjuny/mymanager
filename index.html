@@ -411,7 +411,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJ7qAkGjQRciWPy8h-ccTI
 // ===== STORAGE (GAS 연동 + cfg는 기기별 로컬 저장) =====
 const S = {
   // 인메모리 캐시 (GAS에서 불러온 데이터 보관)
-  data: { tasks:[], events:[], habits:[], habit_logs:[], goals:[] },
+  data: { tasks:[], events:[], habits:[], habit_logs:[], goals:[], classes:[] },
 
   // in-memory 캐시에서 읽기 (렌더링 함수들이 사용)
   get(k) { return this.data[k] ? [...this.data[k]] : []; },
@@ -428,7 +428,7 @@ const S = {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const d = await r.json();
       if (d.error) throw new Error(d.error);
-      ['tasks','events','habits','habit_logs','goals'].forEach(k => {
+     ['tasks','events','habits','habit_logs','goals','classes'].forEach(k => {
         this.data[k] = Array.isArray(d[k]) ? d[k] : [];
       });
       showSync('ok');
@@ -555,9 +555,15 @@ function renderHome(){
     const b=dl<0?'<span class="badge badge-red">⚠️ 지남</span>':dl===0?'<span class="badge badge-red">오늘!</span>':dl===1?'<span class="badge badge-orange">내일</span>':`<span class="badge badge-yellow">${dl}일</span>`;
     return `<div class="row"><div class="row-left"><div class="row-title">${esc(t.title)}</div><div class="row-sub">${esc(t.subject||'과목 미입력')}</div></div>${b}</div>`;
   }).join('') : '<div class="empty">곧 마감인 항목이 없어요 👍</div>';
-  const evts=S.get('events').filter(e=>e.date===ts).sort((a,b)=>(a.start||'')>(b.start||'')?1:-1);
-  const sel=document.getElementById('home-sched');
-  sel.innerHTML=evts.length?evts.map(e=>`<div class="row"><span class="badge badge-indigo">${e.start||'종일'}</span><span style="margin-left:10px;font-size:.85rem">${esc(e.title)}</span></div>`).join(''):'<div class="empty">오늘 일정이 없어요</div>';
+const evts=S.get('events').filter(e=>e.date===ts);
+const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
+const cls=S.get('classes').filter(c=>c.day===todayDay);
+const combined=[
+  ...cls.map(c=>({s:c.start,h:`<div class="row"><span class="badge badge-blue">${c.start}</span><span style="margin-left:8px;font-size:.85rem">${esc(c.name)}</span><span style="margin-left:auto;font-size:.7rem;color:#94a3b8">${esc(c.room||'')}</span></div>`})),
+  ...evts.map(e=>({s:e.start||'',h:`<div class="row"><span class="badge badge-indigo">${e.start||'종일'}</span><span style="margin-left:8px;font-size:.85rem">${esc(e.title)}</span></div>`}))
+].sort((a,b)=>a.s>b.s?1:-1);
+const sel=document.getElementById('home-sched');
+sel.innerHTML=combined.length?combined.map(x=>x.h).join(''):'<div class="empty">오늘 일정이 없어요</div>';
   const habits=S.get('habits'), logs=S.get('habit_logs'), dk=todayDayKey();
   const todayH=habits.filter(h=>Array.isArray(h.days)&&h.days.includes(dk));
   const doneH=todayH.filter(h=>logs.some(l=>l.hid===h.id&&l.date===ts));
