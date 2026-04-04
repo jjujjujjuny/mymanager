@@ -784,31 +784,33 @@ function delHabit(id){
 function renderTimetable(){
   const classes=S.get('classes');
   const el=document.getElementById('timetable-list');
-  const ORDER=['mon','tue','wed','thu','fri','sat','sun'];
-  const KR={mon:'월요일',tue:'화요일',wed:'수요일',thu:'목요일',fri:'금요일',sat:'토요일',sun:'일요일'};
   const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
   if(!classes.length){
-    el.innerHTML='<div class="card"><div class="card-body"><div class="empty">수업 데이터가 없어요. 🔄 눌러봐</div></div></div>';
+    el.innerHTML='<div class="card"><div class="card-body"><div class="empty">수업 데이터 없어요. 🔄 눌러봐</div></div></div>';
     return;
   }
-  const byDay={};
-  classes.forEach(c=>{ if(!byDay[c.day]) byDay[c.day]=[]; byDay[c.day].push(c); });
-  Object.values(byDay).forEach(arr=>arr.sort((a,b)=>a.start>b.start?1:-1));
-  el.innerHTML=ORDER.filter(d=>byDay[d]).map(d=>{
-    const isToday=d===todayDay;
-    return `<div class="card" style="${isToday?'border:2px solid #6366f1':''}">
-      <div class="card-hdr"><h3>${isToday?'📍 ':''} ${KR[d]}</h3></div>
-      <div class="card-body">
-        ${byDay[d].map(c=>`<div class="row">
-          <div class="row-left">
-            <div class="row-title">${esc(c.name)}</div>
-            <div class="row-sub">${esc(c.room||'')}</div>
-          </div>
-          <span style="font-size:.75rem;color:#6366f1;font-weight:600;white-space:nowrap">${c.start}${c.end?' – '+c.end:''}</span>
-        </div>`).join('')}
-      </div>
-    </div>`;
+  const days=['mon','tue','wed','thu','fri'];
+  const dayKR={mon:'월',tue:'화',wed:'수',thu:'목',fri:'금'};
+  const COLORS=['#6366f1','#10b981','#f97316','#ec4899','#8b5cf6','#06b6d4','#f59e0b'];
+  const cmap={};let ci=0;
+  [...new Set(classes.map(c=>c.name))].forEach(n=>{cmap[n]=COLORS[ci++%COLORS.length];});
+  const toMin=t=>{const m=String(t||'').match(/(\d+):(\d+)/);return m?(+m[1])*60+(+m[2]):0;};
+  const slots=[];for(let m=9*60;m<20*60;m+=30)slots.push(m);
+  const head=`<tr><th style="width:36px;background:#f8fafc;border:1px solid #e2e8f0"></th>${days.map(d=>`<th style="text-align:center;padding:6px 2px;font-size:.72rem;font-weight:700;background:${d===todayDay?'#6366f1':'#f8fafc'};color:${d===todayDay?'#fff':'#475569'};border:1px solid #e2e8f0">${dayKR[d]}</th>`).join('')}</tr>`;
+  const rows=slots.map(slot=>{
+    const h=Math.floor(slot/60),m=slot%60;
+    const cells=days.map(d=>{
+      const cls=classes.find(c=>c.day===d&&toMin(c.start)<=slot&&toMin(c.end)>slot);
+      const bg=d===todayDay?'#f5f3ff':'#fff';
+      if(!cls)return`<td style="border:1px solid #f1f5f9;height:24px;background:${bg}"></td>`;
+      const isFirst=toMin(cls.start)===slot;
+      const col=cmap[cls.name]||'#6366f1';
+      const nm=cls.name.length>6?cls.name.slice(0,6)+'…':cls.name;
+      return`<td style="border:1px solid #f1f5f9;height:24px;background:${col}18;padding:1px 3px;vertical-align:top">${isFirst?`<div style="font-size:.6rem;font-weight:700;color:${col};white-space:nowrap;overflow:hidden">${esc(nm)}</div><div style="font-size:.52rem;color:#94a3b8">${esc(cls.room||'')}</div>`:''}</td>`;
+    }).join('');
+    return`<tr><td style="font-size:.6rem;color:#94a3b8;text-align:right;padding-right:4px;white-space:nowrap;background:#fafafa;border:1px solid #f1f5f9">${m===0?`${h}:00`:''}</td>${cells}</tr>`;
   }).join('');
+  el.innerHTML=`<div class="card"><div class="card-body" style="padding:8px;overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead>${head}</thead><tbody>${rows}</tbody></table></div></div>`;
 }
 // ===== GOALS =====
 function renderGoals(){
