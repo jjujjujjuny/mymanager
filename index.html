@@ -941,7 +941,7 @@ function doImport(){
   const raw=document.getElementById('import-json').value.trim(); if(!raw){showIM('아무것도 없는데?','#dc2626');return;}
   let data; try{data=JSON.parse(raw);}catch(e){showIM('JSON 형식이 잘못됐어.','#dc2626');return;}
   let added=0;
-  ['tasks','events','habits','habit_logs','goals'].forEach(k=>{
+  ['tasks','events','habits','habit_logs','goals','classes'].forEach(k=>{
     if(!Array.isArray(data[k]))return;
     const ex=S.get(k), ids=new Set(ex.map(x=>x.id));
     const nw=data[k].filter(x=>!ids.has(x.id));
@@ -956,7 +956,7 @@ function doImport(){
 }
 function showIM(txt,color){ const el=document.getElementById('import-msg'); el.textContent=txt; el.style.color=color; el.style.display='block'; }
 function doExport(){
-  const data={tasks:S.get('tasks'),events:S.get('events'),habits:S.get('habits'),habit_logs:S.get('habit_logs'),goals:S.get('goals')};
+  const data={tasks:S.get('tasks'),events:S.get('events'),habits:S.get('habits'),habit_logs:S.get('habit_logs'),goals:S.get('goals'),classes:S.get('classes')};
   const json=JSON.stringify(data,null,2);
   navigator.clipboard.writeText(json).catch(()=>{const ta=document.getElementById('import-json');ta.value=json;ta.select();document.execCommand('copy');});
   document.getElementById('export-ok').style.display='block';
