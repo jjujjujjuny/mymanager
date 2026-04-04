@@ -468,7 +468,7 @@ const S = {
     try {
       const r = await fetch(GAS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
         body: JSON.stringify(payload)
       });
       const text = await r.text();
