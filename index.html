@@ -466,10 +466,17 @@ const S = {
   // GAS에 POST 요청
   async post(payload) {
     try {
-      await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+      const r = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
     } catch(e) {
       console.error('저장 실패:', e);
       showSync('err', '저장 실패');
+      throw e;
     }
   },
 
@@ -608,7 +615,7 @@ sel.innerHTML=combined.length?combined.map(x=>x.html).join(''):'<div class="empt
   }).join(''):'<div class="empty">오늘 설정된 습관이 없어요</div>';
   updateCharMsg();
 }
-function quickHabit(id){ toggleHabitLog(id); renderHome(); }
+async function quickHabit(id){ await toggleHabitLog(id); renderHabits(); renderHome(); }
 function quickTask(id){ toggleTask(id); }
 // ===== TASKS =====
 function setFilter(btn,f){
@@ -759,20 +766,20 @@ function renderHabits(){
   const ael=document.getElementById('habits-all');
   ael.innerHTML=others.length?`<div class="card"><div class="card-hdr"><h3>다른 날 습관</h3></div><div class="card-body">${others.map(h=>`<div class="row"><span style="font-size:.85rem">${h.icon} ${esc(h.name)}</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:.7rem;color:#94a3b8">${(h.days||[]).map(d=>DKR[d]).join(' ')}</span><button class="act-btn" onclick="delHabit('${h.id}')">🗑️</button></div></div>`).join('')}</div></div>`:'';
 }
-function checkHabit(id){ toggleHabitLog(id); renderHabits(); renderHome(); }
-function toggleHabitLog(id){
+async function checkHabit(id){ await toggleHabitLog(id); renderHabits(); renderHome(); }
+async function toggleHabitLog(id){
   const logs=S.get('habit_logs'), ts=todayStr();
   const i=logs.findIndex(l=>l.hid===id&&dateStr(l.date)===ts);
   if(i>-1){
     const removed=logs.splice(i,1)[0];
     S.data.habit_logs=logs;
-    if(removed.id) S.remove('habit_logs',removed.id);
-    else S.removeHabitLog(id,ts);
+    if(removed.id) await S.remove('habit_logs',removed.id);
+    else await S.removeHabitLog(id,ts);
   }else{
     const item={id:Date.now()+'',hid:id,date:ts};
     logs.push(item);
     S.data.habit_logs=logs;
-    S.upsert('habit_logs',item);
+    await S.upsert('habit_logs',item);
   }
 }
 function openHabitModal(){ selIcon='📚'; selDays=['mon','tue','wed','thu','fri']; document.getElementById('h-name').value=''; buildIconGrid(); buildDayGrid(); openModal('m-habit'); }
