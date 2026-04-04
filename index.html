@@ -449,9 +449,12 @@ const S = {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const d = await r.json();
       if (d.error) throw new Error(d.error);
-     ['tasks','events','habits','habit_logs','goals','classes'].forEach(k => {
+      const prevLogs = [...this.data.habit_logs];
+      ['tasks','events','habits','habit_logs','goals','classes'].forEach(k => {
         this.data[k] = Array.isArray(d[k]) ? d[k] : [];
       });
+      const gasLogIds = new Set(this.data.habit_logs.map(l=>String(l.id)));
+      prevLogs.filter(l=>!gasLogIds.has(String(l.id))).forEach(l=>this.data.habit_logs.push(l));
       showSync('ok');
       renderAll();
     } catch(e) {
@@ -759,7 +762,7 @@ function renderHabits(){
 function checkHabit(id){ toggleHabitLog(id); renderHabits(); renderHome(); }
 function toggleHabitLog(id){
   const logs=S.get('habit_logs'), ts=todayStr();
-  const i=logs.findIndex(l=>l.hid===id&&l.date===ts);
+  const i=logs.findIndex(l=>l.hid===id&&dateStr(l.date)===ts);
   if(i>-1){
     const removed=logs.splice(i,1)[0];
     S.data.habit_logs=logs;
