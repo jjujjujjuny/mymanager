@@ -193,6 +193,15 @@ textarea.inp{resize:none}
 @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
 /* TOP ROW UTILS */
 .top-row{display:flex;align-items:center;justify-content:space-between}
+.tt-wrap{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:auto}
+.tt-grid{display:grid;grid-template-columns:40px repeat(5,1fr)}
+.tt-head{font-size:.65rem;font-weight:700;text-align:center;padding:6px 2px;background:#f8fafc;color:#64748b;border-bottom:2px solid #e2e8f0;position:sticky;top:0;z-index:2}
+.tt-head.today-col{background:#eef2ff;color:#6366f1}
+.tt-time{font-size:.58rem;color:#94a3b8;text-align:right;padding:0 4px 0 0;height:24px;display:flex;align-items:flex-start;justify-content:flex-end;border-right:1px solid #f1f5f9}
+.tt-cell{border-right:1px solid #f1f5f9;border-top:1px dashed #f8fafc;height:24px;position:relative}
+.tt-cell.hour-line{border-top:1px solid #e2e8f0}
+.tt-cell.today-col{background:#fafafe}
+.tt-block{position:absolute;left:1px;right:1px;border-radius:5px;padding:2px 4px;font-size:.6rem;font-weight:600;color:#fff;overflow:hidden;line-height:1.3;z-index:1}
 </style>
 </head>
 <body>
@@ -278,10 +287,11 @@ textarea.inp{resize:none}
     </div>
     <div id="day-events" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
+  <!-- TIMETABLE -->
   <div id="page-timetable" class="tab-page">
-  <div class="top-row"><span class="sec-title">🗓️ 수업 시간표</span></div>
-  <div id="timetable-list" style="display:flex;flex-direction:column;gap:8px"></div>
-</div>
+    <div class="top-row"><span class="sec-title">🗓️ 주간 시간표</span></div>
+    <div id="timetable-list"></div>
+  </div>
   <!-- HABITS -->
   <div id="page-habits" class="tab-page">
     <div class="top-row"><span class="sec-title">✅ 습관 트래커</span><button class="btn-primary" onclick="openHabitModal()">+ 추가</button></div>
@@ -296,6 +306,7 @@ textarea.inp{resize:none}
     <div class="top-row"><span class="sec-title">🎯 목표</span><button class="btn-primary" onclick="openGoalModal()">+ 추가</button></div>
     <div id="goals-list" style="display:flex;flex-direction:column;gap:10px"></div>
   </div>
+  
 </main>
 <!-- FLOATING CHARACTER -->
 <div class="char-wrap">
@@ -555,6 +566,7 @@ function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
   if(tab==='schedule') renderWeek();
+  if(tab==='timetable') renderTimetable();
 }
 
 // ===== HOME =====
@@ -572,14 +584,15 @@ function renderHome(){
     return `<div class="row"><button class="task-check-sm${t.done?' chk':''}" onclick="quickTask('${t.id}')">✓</button><div class="row-left"><div class="row-title${t.done?' crossed':''}">${esc(t.title)}</div><div class="row-sub">${esc(t.subject||'과목 미입력')}</div></div>${b}</div>`;
   }).join('') : '<div class="empty">곧 마감인 항목이 없어요 👍</div>';
 const evts=S.get('events').filter(e=>dateStr(e.date)===ts);
-const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-const cls=S.get('classes').filter(c=>c.day===todayDay);
+const todayDayIdx=new Date().getDay();
+const todayDayKey2=['sun','mon','tue','wed','thu','fri','sat'][todayDayIdx];
+const cls=S.get('classes').filter(c=>c.day===todayDayKey2);
 const combined=[
-  ...cls.map(c=>({s:c.start,h:`<div class="row"><span class="badge badge-blue">${c.start}</span><span style="margin-left:8px;font-size:.85rem">${esc(c.name)}</span><span style="margin-left:auto;font-size:.7rem;color:#94a3b8">${esc(c.room||'')}</span></div>`})),
-  ...evts.map(e=>({s:e.start||'',h:`<div class="row"><span class="badge badge-indigo">${e.start||'종일'}</span><span style="margin-left:8px;font-size:.85rem">${esc(e.title)}</span></div>`}))
-].sort((a,b)=>a.s>b.s?1:-1);
+  ...cls.map(c=>({s:c.start||'',html:`<div class="row"><span class="badge" style="background:#6366f1;color:#fff;padding:2px 7px;border-radius:6px;font-size:.7rem;min-width:48px;text-align:center">${c.start||'?'}</span><span style="margin-left:10px;font-size:.85rem;font-weight:600">${esc(c.name)}</span><span style="margin-left:6px;font-size:.72rem;color:#94a3b8">${esc(c.room||'')}</span></div>`})),
+  ...evts.map(e=>({s:e.start||'',html:`<div class="row"><span class="badge badge-indigo" style="min-width:48px;text-align:center">${e.start||'종일'}</span><span style="margin-left:10px;font-size:.85rem">${esc(e.title)}</span></div>`}))
+].sort((a,b)=>a.s>b.s?1:a.s<b.s?-1:0);
 const sel=document.getElementById('home-sched');
-sel.innerHTML=combined.length?combined.map(x=>x.h).join(''):'<div class="empty">오늘 일정이 없어요</div>';
+sel.innerHTML=combined.length?combined.map(x=>x.html).join(''):'<div class="empty">오늘 일정이 없어요</div>';
   const habits=S.get('habits'), logs=S.get('habit_logs'), dk=todayDayKey();
   const todayH=habits.filter(h=>Array.isArray(h.days)&&h.days.includes(dk));
   const doneH=todayH.filter(h=>logs.some(l=>l.hid===h.id&&l.date===ts));
@@ -781,36 +794,64 @@ function delHabit(id){
   S.removeWhere('habit_logs','hid',id);
   renderHabits(); renderHome();
 }
+// ===== TIMETABLE =====
 function renderTimetable(){
-  const classes=S.get('classes');
   const el=document.getElementById('timetable-list');
-  const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
+  const classes=S.get('classes');
   if(!classes.length){
-    el.innerHTML='<div class="card"><div class="card-body"><div class="empty">수업 데이터 없어요. 🔄 눌러봐</div></div></div>';
+    el.innerHTML='<div class="card"><div class="card-body"><div class="empty">수업 데이터 없음. 🔄 눌러보거나 GAS 재배포 확인해봐</div></div></div>';
     return;
   }
   const days=['mon','tue','wed','thu','fri'];
   const dayKR={mon:'월',tue:'화',wed:'수',thu:'목',fri:'금'};
-  const COLORS=['#6366f1','#10b981','#f97316','#ec4899','#8b5cf6','#06b6d4','#f59e0b'];
+  const COLORS=['#6366f1','#10b981','#f97316','#ec4899','#8b5cf6','#06b6d4','#f59e0b','#ef4444'];
   const cmap={};let ci=0;
   [...new Set(classes.map(c=>c.name))].forEach(n=>{cmap[n]=COLORS[ci++%COLORS.length];});
-  const toMin=t=>{const m=String(t||'').match(/(\d+):(\d+)/);return m?(+m[1])*60+(+m[2]):0;};
-  const slots=[];for(let m=9*60;m<20*60;m+=30)slots.push(m);
-  const head=`<tr><th style="width:36px;background:#f8fafc;border:1px solid #e2e8f0"></th>${days.map(d=>`<th style="text-align:center;padding:6px 2px;font-size:.72rem;font-weight:700;background:${d===todayDay?'#6366f1':'#f8fafc'};color:${d===todayDay?'#fff':'#475569'};border:1px solid #e2e8f0">${dayKR[d]}</th>`).join('')}</tr>`;
-  const rows=slots.map(slot=>{
-    const h=Math.floor(slot/60),m=slot%60;
-    const cells=days.map(d=>{
-      const cls=classes.find(c=>c.day===d&&toMin(c.start)<=slot&&toMin(c.end)>slot);
-      const bg=d===todayDay?'#f5f3ff':'#fff';
-      if(!cls)return`<td style="border:1px solid #f1f5f9;height:24px;background:${bg}"></td>`;
-      const isFirst=toMin(cls.start)===slot;
-      const col=cmap[cls.name]||'#6366f1';
-      const nm=cls.name.length>6?cls.name.slice(0,6)+'…':cls.name;
-      return`<td style="border:1px solid #f1f5f9;height:24px;background:${col}18;padding:1px 3px;vertical-align:top">${isFirst?`<div style="font-size:.6rem;font-weight:700;color:${col};white-space:nowrap;overflow:hidden">${esc(nm)}</div><div style="font-size:.52rem;color:#94a3b8">${esc(cls.room||'')}</div>`:''}</td>`;
-    }).join('');
-    return`<tr><td style="font-size:.6rem;color:#94a3b8;text-align:right;padding-right:4px;white-space:nowrap;background:#fafafa;border:1px solid #f1f5f9">${m===0?`${h}:00`:''}</td>${cells}</tr>`;
-  }).join('');
-  el.innerHTML=`<div class="card"><div class="card-body" style="padding:8px;overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead>${head}</thead><tbody>${rows}</tbody></table></div></div>`;
+  const toMin=t=>{
+    if(!t) return -1;
+    const s=String(t);
+    const kr=s.match(/(오전|오후)\s*(\d+):(\d+)/);
+    if(kr){ let h=+kr[2]; if(kr[1]==='오후'&&h<12)h+=12; if(kr[1]==='오전'&&h===12)h=0; return h*60+(+kr[3]); }
+    const m=s.match(/(\d+):(\d+)/);
+    return m?(+m[1])*60+(+m[2]):-1;
+  };
+  const START_H=8, END_H=21, SLOT=30;
+  const totalSlots=(END_H-START_H)*60/SLOT;
+  const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
+  const blockMap={};
+  days.forEach(d=>{blockMap[d]={};});
+  classes.forEach(c=>{
+    if(!days.includes(c.day)) return;
+    const sMin=toMin(c.start), eMin=toMin(c.end);
+    if(sMin<0) return;
+    const startSlot=Math.round((sMin-START_H*60)/SLOT);
+    const span=Math.max(1,Math.round((eMin-sMin)/SLOT));
+    if(startSlot<0||startSlot>=totalSlots) return;
+    blockMap[c.day][startSlot]={name:c.name,room:c.room||'',color:cmap[c.name]||'#6366f1',span};
+  });
+  let html='<div class="tt-wrap"><div class="tt-grid">';
+  html+=`<div class="tt-head"></div>`;
+  days.forEach(d=>{html+=`<div class="tt-head${d===todayDay?' today-col':''}">${dayKR[d]}</div>`;});
+  for(let slot=0;slot<totalSlots;slot++){
+    const totalMin=START_H*60+slot*SLOT;
+    const hh=Math.floor(totalMin/60), mm=totalMin%60;
+    const isHour=mm===0;
+    html+=`<div class="tt-time">${isHour?String(hh).padStart(2,'0')+':00':''}</div>`;
+    days.forEach(d=>{
+      const blk=blockMap[d][slot];
+      const tc=d===todayDay?' today-col':'';
+      if(blk){
+        html+=`<div class="tt-cell${isHour?' hour-line':''}${tc}" style="position:relative">`;
+        html+=`<div class="tt-block" style="background:${blk.color};height:${blk.span*24-2}px" title="${esc(blk.name)} ${esc(blk.room)}">`;
+        html+=`<div>${esc(blk.name)}</div><div style="font-weight:400;opacity:.85;font-size:.55rem">${esc(blk.room)}</div>`;
+        html+=`</div></div>`;
+      } else {
+        html+=`<div class="tt-cell${isHour?' hour-line':''}${tc}"></div>`;
+      }
+    });
+  }
+  html+='</div></div>';
+  el.innerHTML=html;
 }
 // ===== GOALS =====
 function renderGoals(){
