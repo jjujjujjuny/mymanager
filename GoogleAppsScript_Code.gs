@@ -203,6 +203,16 @@ function upsertRow(ss, sheetName, data) {
 
       const rowIdx = existingIds.indexOf(dataId);
       if (rowIdx >= 0) {
+        // LearnUS 자동수집 항목(ln_ 접두사)은 사용자가 완료 처리한 경우 done 값을 보존
+        if (String(dataId).startsWith('ln_')) {
+          const doneColIdx = headers.indexOf('done');
+          if (doneColIdx >= 0) {
+            const existingDone = sheet.getRange(rowIdx + 2, doneColIdx + 1).getValue();
+            if (existingDone === true || existingDone === 'true') {
+              rowData[doneColIdx] = true; // 완료 상태 유지
+            }
+          }
+        }
         // 기존 행 업데이트
         sheet.getRange(rowIdx + 2, 1, 1, rowData.length).setValues([rowData]);
         return;
