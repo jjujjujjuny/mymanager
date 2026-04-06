@@ -27,6 +27,15 @@ jobs:
       - name: 의존성 설치
         run: pip install requests
 
+      - name: Secrets 확인 (디버그)
+        env:
+          LEARNUS_ID: ${{ secrets.LEARNUS_ID }}
+          LEARNUS_PW: ${{ secrets.LEARNUS_PW }}
+        run: |
+          echo "ID 앞 3자리: ${LEARNUS_ID:0:3}***"
+          echo "ID 길이: ${#LEARNUS_ID}"
+          echo "PW 길이: ${#LEARNUS_PW}"
+
       - name: LearnUS 데이터 수집 → GAS 전송
         env:
           LEARNUS_ID: ${{ secrets.LEARNUS_ID }}
