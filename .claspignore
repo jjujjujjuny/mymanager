@@ -1,0 +1,6 @@
+# GAS에 올릴 파일: GoogleAppsScript_Code.gs, appsscript.json 만 허용
+# 나머지 전부 무시
+
+**
+!GoogleAppsScript_Code.gs
+!appsscript.json
