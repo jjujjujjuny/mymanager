@@ -1,58 +1,47 @@
 """
 fetch_learnus.py
 ================
-LearnUS(연세대 Moodle)에서 과제/시험/동영상 일정을 수집해
+연세대 SSO(infra.yonsei.ac.kr)로 로그인 후
+LearnUS Moodle API로 과제/시험/동영상 일정을 수집해
 GAS(Google Apps Script) API로 Google Sheets에 직접 저장.
-
-로컬 실행:
-  python fetch_learnus.py
-
-GitHub Actions 자동 실행:
-  환경변수 LEARNUS_ID, LEARNUS_PW, GAS_URL 사용
 """
 
 import os
 import sys
+import re
 import json
 import hashlib
 import getpass
-import re
 import requests
+from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 
 # ── 설정 ──────────────────────────────────────────────────────────────
 BASE_URL  = "https://ys.learnus.org"
-TOKEN_URL = f"{BASE_URL}/login/token.php"
 API_URL   = f"{BASE_URL}/webservice/rest/server.php"
-
 GAS_URL   = os.environ.get("GAS_URL",
     "https://script.google.com/macros/s/AKfycbwWJ563ydzFxdtXS2L99AwlixvWrFek7NYhRv6EJWgZdaRBJwhG0HpuAnFwEMSoCZXhEw/exec"
 )
 
 KST       = timezone(timedelta(hours=9))
 TODAY     = datetime.now(KST).date()
-
-# 이미 지난 마감 표시 여부 (0 = 오늘 이후만, 양수 = N일 전까지 포함)
 PAST_DAYS = 0
 
 # ── 유틸 ──────────────────────────────────────────────────────────────
 def ts_to_date(ts):
-    """Unix timestamp → date (KST)"""
     if not ts or ts <= 0:
         return None
     return datetime.fromtimestamp(ts, tz=KST).date()
 
 def priority(due_date):
-    if due_date is None:
-        return "low"
+    if due_date is None: return "low"
     days = (due_date - TODAY).days
     if days <= 2:  return "high"
     if days <= 7:  return "medium"
     return "low"
 
-def stable_id(course_name, task_name, due_str):
-    """과목명+과제명+마감일 기반 고정 ID (매 실행마다 동일 → upsert 중복 방지)"""
-    key = f"{course_name}|{task_name}|{due_str}"
+def stable_id(course, name, due):
+    key = f"{course}|{name}|{due}"
     return "ln_" + hashlib.md5(key.encode()).hexdigest()[:12]
 
 def strip_html(text):
@@ -61,33 +50,134 @@ def strip_html(text):
 def next_week():
     return (TODAY + timedelta(days=7)).isoformat()
 
-# ── 인증 ──────────────────────────────────────────────────────────────
-def get_token(username, password):
-    for service in ["moodle_mobile_app", "local_mobile"]:
+# ── SSO 로그인 → Moodle 토큰 발급 ────────────────────────────────────
+def sso_login(username, password):
+    """
+    흐름:
+    1. learnus.org/login → SSO 페이지로 리다이렉트
+    2. SSO 폼 파싱 → 연세대 ID/PW 제출
+    3. 세션 쿠키 획득
+    4. Moodle mobile 토큰 발급 엔드포인트 호출
+    """
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    })
+
+    # Step 1: learnus 로그인 페이지 → SSO로 리다이렉트
+    print("  → learnus.org 접속...")
+    r = session.get(f"{BASE_URL}/login/index.php", allow_redirects=True, timeout=15)
+    login_url = r.url
+    print(f"  → 로그인 페이지: {login_url[:60]}...")
+
+    # Step 2: SSO 폼 파싱
+    soup = BeautifulSoup(r.text, "html.parser")
+    form = soup.find("form")
+    if not form:
+        print("  ❌ 로그인 폼을 찾을 수 없습니다.")
+        sys.exit(1)
+
+    action = form.get("action", login_url)
+    if action.startswith("/"):
+        # 상대 경로면 현재 호스트 기반으로 절대 경로 변환
+        from urllib.parse import urlparse
+        parsed = urlparse(login_url)
+        action = f"{parsed.scheme}://{parsed.netloc}{action}"
+    elif not action.startswith("http"):
+        action = login_url
+
+    # 숨겨진 필드 수집
+    hidden = {
+        inp["name"]: inp.get("value", "")
+        for inp in form.find_all("input", type="hidden")
+        if inp.get("name")
+    }
+
+    # ID/PW 필드명 자동 탐지
+    id_field  = _find_field(form, ["userid", "username", "id", "loginid", "user_id"])
+    pw_field  = _find_field(form, ["password", "passwd", "pw", "pass"])
+
+    print(f"  → 폼 필드: ID={id_field}, PW={pw_field}")
+    print(f"  → POST → {action[:60]}...")
+
+    # Step 3: SSO에 자격증명 제출
+    payload = {**hidden, id_field: username, pw_field: password}
+    r = session.post(action, data=payload, allow_redirects=True, timeout=15)
+
+    # 로그인 성공 여부 확인
+    if "로그아웃" not in r.text and "logout" not in r.text.lower() and "dashboard" not in r.url:
+        # 로그인 실패 메시지 탐색
+        err_soup = BeautifulSoup(r.text, "html.parser")
+        err_msg = err_soup.find(class_=re.compile(r"error|alert|invalid", re.I))
+        detail = err_msg.get_text(strip=True)[:80] if err_msg else "응답 확인 필요"
+        print(f"  ❌ SSO 로그인 실패: {detail}")
+        print(f"  현재 URL: {r.url}")
+        sys.exit(1)
+
+    print("  ✅ SSO 로그인 성공!")
+
+    # Step 4: Moodle mobile 토큰 발급
+    token = _get_moodle_token(session)
+    return token
+
+def _find_field(form, candidates):
+    """폼에서 후보 필드명 중 실제 존재하는 것 반환"""
+    all_inputs = form.find_all("input")
+    names = [inp.get("name", "").lower() for inp in all_inputs]
+    for c in candidates:
+        if c in names:
+            return c
+    # 못 찾으면 text/password 타입 순서대로 반환
+    for inp in all_inputs:
+        if inp.get("type") == "text" and inp.get("name"):
+            return inp["name"]
+    return candidates[0]
+
+def _get_moodle_token(session):
+    """세션 쿠키로 Moodle mobile 토큰 발급"""
+    import random, string, urllib.parse
+
+    passport = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    url = f"{BASE_URL}/admin/tool/mobile/launch.php?service=moodle_mobile_app&passport={passport}"
+
+    r = session.get(url, allow_redirects=False, timeout=15)
+
+    # 리다이렉트 Location 헤더에서 토큰 추출
+    location = r.headers.get("Location", "")
+    if not location:
+        # 리다이렉트를 따라가서 최종 URL에서 추출
+        r = session.get(url, allow_redirects=True, timeout=15)
+        location = r.url
+
+    # moodlemobile://token=BASE64_STRING 형식
+    match = re.search(r"token=([A-Za-z0-9+/=]+)", location)
+    if match:
+        import base64
+        token_b64 = match.group(1)
         try:
-            r = requests.post(TOKEN_URL, data={
-                "username": username,
-                "password": password,
-                "service":  service,
-            }, timeout=15)
-            data = r.json()
-            if "token" in data:
-                print(f"  ✅ 로그인 성공 (service: {service})")
-                return data["token"]
-            if data.get("errorcode") == "invalidlogin":
-                print("  ❌ ID 또는 PW가 틀렸습니다.")
-                sys.exit(1)
-        except Exception as e:
-            print(f"  ⚠️  연결 오류: {e}")
-    print("  ❌ 웹서비스 토큰 발급 실패. 아래 '대안' 섹션을 확인하세요.")
+            decoded = base64.b64decode(token_b64 + "==").decode("utf-8")
+            # 형식: "PRIVATETOKEN:::PUBLICTOKEN" 또는 그냥 토큰
+            token = decoded.split(":::")[0]
+            print(f"  ✅ Moodle 토큰 발급 성공")
+            return token
+        except Exception:
+            pass
+
+    # 직접 토큰이 URL에 있는 경우
+    match = re.search(r"token=([a-f0-9]{32})", location)
+    if match:
+        print(f"  ✅ Moodle 토큰 발급 성공")
+        return match.group(1)
+
+    print(f"  ❌ 토큰 추출 실패. Location: {location[:100]}")
     sys.exit(1)
 
-# ── Moodle API ─────────────────────────────────────────────────────────
+# ── Moodle REST API ────────────────────────────────────────────────────
 def moodle(token, function, **params):
     try:
         r = requests.post(API_URL, data={
-            "wstoken":            token,
-            "wsfunction":         function,
+            "wstoken": token,
+            "wsfunction": function,
             "moodlewsrestformat": "json",
             **params,
         }, timeout=20)
@@ -139,7 +229,7 @@ def get_quizzes(token, course_ids, courses_map):
         due_date = ts_to_date(q.get("timeclose", 0))
         if due_date and (due_date - TODAY).days < -PAST_DAYS:
             continue
-        cname = courses_map.get(q.get("course", 0), q.get("coursemodule", ""))
+        cname = courses_map.get(q.get("course", 0), "")
         due_str = due_date.isoformat() if due_date else next_week()
         timelimit_min = (q.get("timelimit") or 0) // 60
         tasks.append({
@@ -157,24 +247,18 @@ def get_quizzes(token, course_ids, courses_map):
 
 def get_videos(token, courses):
     tasks = []
-    video_modules = {"vod", "ucvod", "unilvod", "url", "resource", "hvp", "assign"}
-    # vod/ucvod 가 주요 동영상 타입
-
     for course in courses:
         contents = moodle(token, "core_course_get_contents", courseid=course["id"])
         if not contents:
             continue
         for section in contents:
             for mod in section.get("modules", []):
-                modname = mod.get("modname", "").lower()
-                if modname not in {"vod", "ucvod", "unilvod", "hvp"}:
+                if mod.get("modname", "").lower() not in {"vod", "ucvod", "unilvod", "hvp"}:
                     continue
-                # 이미 완료된 항목 건너뜀
                 completion = mod.get("completiondata", {})
                 if isinstance(completion, dict) and completion.get("state", 0) == 1:
                     continue
-                due_ts  = mod.get("completionexpected", 0)
-                due_date = ts_to_date(due_ts)
+                due_date = ts_to_date(mod.get("completionexpected", 0))
                 if due_date and (due_date - TODAY).days < -PAST_DAYS:
                     continue
                 due_str = due_date.isoformat() if due_date else next_week()
@@ -191,13 +275,14 @@ def get_videos(token, courses):
                 })
     return tasks
 
-# ── GAS로 전송 ─────────────────────────────────────────────────────────
+# ── GAS 전송 ──────────────────────────────────────────────────────────
 def push_to_gas(tasks):
-    print(f"\n[GAS] {len(tasks)}개 항목을 Google Sheets에 전송 중...")
+    print(f"\n[GAS] {len(tasks)}개 → Google Sheets 전송 중...")
     success, fail = 0, 0
     for task in tasks:
         try:
-            r = requests.post(GAS_URL, json={"action": "upsert", "sheet": "tasks", "data": task},
+            r = requests.post(GAS_URL,
+                              json={"action": "upsert", "sheet": "tasks", "data": task},
                               timeout=15)
             if r.status_code == 200:
                 success += 1
@@ -211,16 +296,15 @@ def push_to_gas(tasks):
 # ── 메인 ──────────────────────────────────────────────────────────────
 def main():
     print("=" * 52)
-    print("  LearnUS 일정 자동 수집기")
+    print("  LearnUS 일정 자동 수집기 (SSO 방식)")
     print(f"  기준일: {TODAY} (KST)")
     print("=" * 52)
 
-    # 환경변수(GitHub Actions) 또는 직접 입력
     username = os.environ.get("LEARNUS_ID") or input("\n  학번 (포털 ID): ").strip()
     password = os.environ.get("LEARNUS_PW") or getpass.getpass("  비밀번호: ")
 
-    print("\n[1] 로그인...")
-    token = get_token(username, password)
+    print("\n[1] 연세대 SSO 로그인...")
+    token = sso_login(username, password)
 
     print("[2] 사용자 정보...")
     info = moodle(token, "core_webservice_get_site_info") or {}
@@ -236,25 +320,24 @@ def main():
         print("  ⚠️  수강 과목 없음")
         sys.exit(1)
     courses_map = {c["id"]: c["name"] for c in courses}
-    print(f"  📚 {len(courses)}개: {', '.join(c['name'][:10] for c in courses)}")
+    print(f"  📚 {len(courses)}개")
 
     course_ids = [c["id"] for c in courses]
 
-    print("[4] 과제 수집...")
+    print("[4] 과제...")
     assignments = get_assignments(token, course_ids, courses_map)
     print(f"  📝 {len(assignments)}개")
 
-    print("[5] 퀴즈/시험 수집...")
+    print("[5] 퀴즈/시험...")
     quizzes = get_quizzes(token, course_ids, courses_map)
     print(f"  📖 {len(quizzes)}개")
 
-    print("[6] 동영상 강의 수집...")
+    print("[6] 동영상 강의...")
     videos = get_videos(token, courses)
     print(f"  🎬 {len(videos)}개")
 
     all_tasks = sorted(assignments + quizzes + videos, key=lambda t: t["due"])
 
-    # 요약 출력
     print("\n" + "-" * 52)
     icon_map = {"assignment": "📝", "exam": "📖", "video": "🎬"}
     for t in all_tasks:
@@ -263,9 +346,9 @@ def main():
         print(f"  {icon_map.get(t['type'],'📌')} [{remaining:>4}] {t['subject'][:12]:<12} {t['title'][:28]}")
     print(f"\n  총 {len(all_tasks)}개 항목")
 
-    # GAS 전송
     if all_tasks:
         push_to_gas(all_tasks)
+
     print("\n  🎉 완료! 앱이 다음 동기화 시 자동 반영됩니다.")
 
 if __name__ == "__main__":
