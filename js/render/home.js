@@ -1,5 +1,5 @@
 import { store } from '../store.js';
-import { todayStr, todayDayKey, parseDate, daysLeft, dateStr, esc } from '../utils.js';
+import { todayStr, todayDayKey, parseDate, daysLeft, dateStr, esc, taskUrgency } from '../utils.js';
 import { toggleHabitLog } from './habits.js';
 import { toggleTask } from './tasks.js';
 import { renderHabits } from './habits.js';
@@ -79,8 +79,6 @@ export function updateCharMsg() {
   const tasks = store.get('tasks').filter(t => !t.done);
   const now = new Date(), hr = now.getHours();
   const ts = todayStr();
-  const tom = new Date(); tom.setDate(tom.getDate() + 1); tom.setHours(23, 59, 59);
-  const urgent = tasks.filter(t => parseDate(t.due) <= tom).sort((a, b) => a.due > b.due ? 1 : -1);
   const habits = store.get('habits'), logs = store.get('habit_logs'), dk = todayDayKey();
   const todayH = habits.filter(h => Array.isArray(h.days) && h.days.includes(dk));
   const doneH = todayH.filter(h => logs.some(l => l.hid === h.id && l.date === ts));
@@ -88,12 +86,31 @@ export function updateCharMsg() {
   const hi = hr < 12 ? `${nm}좋은 아침~` : hr < 18 ? `${nm}안녕` : hr < 22 ? `${nm}저녁이네` : `${nm}늦었는데`;
 
   const PICK = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // 긴급도별 분류
+  const byUrgency = { overdue: [], today: [], warning: [], soon: [], ok: [] };
+  tasks.forEach(t => {
+    const u = taskUrgency(t, cfg);
+    if (byUrgency[u]) byUrgency[u].push(t);
+  });
+  byUrgency.overdue.sort((a, b) => a.due > b.due ? 1 : -1);
+  byUrgency.today.sort((a, b) => a.due > b.due ? 1 : -1);
+  byUrgency.warning.sort((a, b) => a.due > b.due ? 1 : -1);
+  byUrgency.soon.sort((a, b) => a.due > b.due ? 1 : -1);
+
   let msg;
-  if (urgent.length) {
-    const t = urgent[0], dl = daysLeft(t.due);
-    msg = dl < 0 ? `"${t.title}" 마감 지났어. 어떻게 할 거야?`
-        : dl === 0 ? `"${t.title}" 오늘 마감이잖아. 빨리.`
-        : `"${t.title}" ${dl}일 남았어. 언제 할 거야?`;
+  if (byUrgency.overdue.length) {
+    const t = byUrgency.overdue[0];
+    msg = PICK([`"${t.title}" 마감 지났어. 어떻게 할 거야?`, `"${t.title}" 이미 마감이야. 교수님께 연락해봐.`]);
+  } else if (byUrgency.today.length) {
+    const t = byUrgency.today[0];
+    msg = PICK([`"${t.title}" 오늘 마감이잖아. 지금 당장.`, `"${t.title}" 오늘까지야. 딴 거 하지 마.`]);
+  } else if (byUrgency.warning.length) {
+    const t = byUrgency.warning[0], dl = daysLeft(t.due);
+    msg = PICK([`"${t.title}" ${dl}일 남았어. 오늘 시작해야 해.`, `"${t.title}" 슬슬 손대야 할 때야. ${dl}일밖에 없어.`]);
+  } else if (byUrgency.soon.length) {
+    const t = byUrgency.soon[0], dl = daysLeft(t.due);
+    msg = PICK([`"${t.title}" ${dl}일 남았어. 미리 시작해두면 좋아.`, `"${t.title}" 아직 ${dl}일 있어. 지금 조금씩 하자.`]);
   } else if (!tasks.length) {
     msg = PICK(['할 거 다 했어? 진짜?', '아무것도 없네. 넘 좋다.', '오늘 할 건 없네. 쉬어.']);
   } else {
@@ -104,6 +121,9 @@ export function updateCharMsg() {
   document.getElementById('char-msg').textContent = msg;
 
   const lines = [msg];
+  // 경고 이상 항목 추가 멘트
+  const critCount = byUrgency.overdue.length + byUrgency.today.length + byUrgency.warning.length;
+  if (critCount > 1) lines.push(`긴급/경고 항목 ${critCount}개야. 우선순위 확인해.`);
   const leftH = todayH.length - doneH.length;
   if (leftH > 0) lines.push(`습관 ${leftH}개 아직 안 했어.`);
   else if (todayH.length) lines.push('오늘 습관 다 체크했네. 나쁘지 않아.');

@@ -1,6 +1,6 @@
 import { store } from '../store.js';
 import { api } from '../api.js';
-import { todayStr, daysLeft, fmtDate, esc } from '../utils.js';
+import { todayStr, daysLeft, fmtDate, esc, taskUrgency } from '../utils.js';
 import { renderHome } from './home.js';
 import { openModal, closeModal } from '../main.js';
 
@@ -29,15 +29,18 @@ export function renderTasks() {
     el.innerHTML = `<div class="card"><div class="card-body"><div class="empty" style="text-align:center;padding:20px">${curFilter === 'done' ? '완료된 항목 없음' : '아직 아무것도 없어. 추가해봐!'}</div></div></div>`;
     return;
   }
+  const cfg = store.cfg();
   el.innerHTML = tasks.map(t => {
     const dl = daysLeft(t.due);
-    let urg = '';
-    if (!t.done) {
-      if (dl < 0)       urg = '<span class="badge badge-red">⚠️ 마감 지남</span>';
-      else if (dl === 0) urg = '<span class="badge badge-red">오늘 마감!</span>';
-      else if (dl <= 2)  urg = `<span class="badge badge-orange">${dl}일 남음</span>`;
-      else               urg = `<span class="badge badge-gray">${dl}일 남음</span>`;
-    }
+    const urgency = taskUrgency(t, cfg);
+    const URG_BADGE = {
+      overdue: `<span class="badge badge-red">💀 마감 지남</span>`,
+      today:   `<span class="badge badge-red">🔴 오늘 마감!</span>`,
+      warning: `<span class="badge badge-orange">🟠 ${dl}일 남음</span>`,
+      soon:    `<span class="badge badge-yellow">🟡 ${dl}일 남음</span>`,
+      ok:      `<span class="badge badge-green">🟢 ${dl}일 남음</span>`,
+    };
+    const urg = t.done ? '' : (URG_BADGE[urgency] || '');
     return `<div class="task-card${t.done ? ' done' : ''}">
       <button class="task-check${t.done ? ' chk' : ''}" data-tid="${t.id}">✓</button>
       <div class="task-body">

@@ -61,6 +61,10 @@ function openSettings() {
   document.getElementById('s-name').value = cfg.name || '';
   document.getElementById('s-char').value = cfg.charName || '';
   selAvatar = cfg.avatar || '🐱';
+  const lead = cfg.leadDays || {};
+  document.getElementById('s-lead-video').value  = lead.video      ?? 2;
+  document.getElementById('s-lead-assign').value = lead.assignment ?? 4;
+  document.getElementById('s-lead-exam').value   = lead.exam       ?? 7;
   buildAvatarGrid();
   openModal('m-settings');
 }
@@ -83,7 +87,12 @@ function saveSettings() {
   const cfg = {
     name: document.getElementById('s-name').value.trim(),
     charName: document.getElementById('s-char').value.trim() || '비서',
-    avatar: selAvatar
+    avatar: selAvatar,
+    leadDays: {
+      video:      Math.max(1, parseInt(document.getElementById('s-lead-video').value)  || 2),
+      assignment: Math.max(1, parseInt(document.getElementById('s-lead-assign').value) || 4),
+      exam:       Math.max(1, parseInt(document.getElementById('s-lead-exam').value)   || 7),
+    }
   };
   store.saveCfg(cfg);
   applySettings(cfg);

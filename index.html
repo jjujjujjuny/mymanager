@@ -239,6 +239,26 @@
     <div class="form-group"><label class="form-label">내 이름</label><input id="s-name" class="inp" placeholder="이름 입력"></div>
     <div class="form-group"><label class="form-label">비서 이름</label><input id="s-char" class="inp" placeholder="예: 찐친이, 민지"></div>
     <div class="form-group"><label class="form-label">비서 아바타</label><div id="avatar-grid" class="picker-grid"></div></div>
+    <div class="form-group">
+      <label class="form-label">마감 알림 시작 시점</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:.82rem;width:72px">🎬 동영상</span>
+          <input id="s-lead-video" type="number" min="1" max="14" class="inp" style="width:60px;text-align:center">
+          <span style="font-size:.78rem;color:#94a3b8">일 전부터</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:.82rem;width:72px">📝 과제</span>
+          <input id="s-lead-assign" type="number" min="1" max="14" class="inp" style="width:60px;text-align:center">
+          <span style="font-size:.78rem;color:#94a3b8">일 전부터</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:.82rem;width:72px">📖 시험</span>
+          <input id="s-lead-exam" type="number" min="1" max="14" class="inp" style="width:60px;text-align:center">
+          <span style="font-size:.78rem;color:#94a3b8">일 전부터</span>
+        </div>
+      </div>
+    </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal('m-settings')">취소</button>
       <button class="btn-save"   onclick="saveSettings()">저장</button>
