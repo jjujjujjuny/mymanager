@@ -153,12 +153,12 @@ COURSE_CODES = [
 # ── 과목 목록 수집 ────────────────────────────────────────────────────
 def get_courses(page):
     """
-    /my/ 에서 전체 과목 링크를 가져온 뒤 COURSE_CODES 에 해당하는 것만 반환.
+    학위과정 페이지(/local/ubion/user/index.php)에서 수강 과목 링크 수집.
+    해당 페이지에는 본인 교과 과목만 표시됨.
     """
-    page.goto(f"{BASE_URL}/my/", wait_until="networkidle", timeout=20000)
+    page.goto(f"{BASE_URL}/local/ubion/user/index.php", wait_until="networkidle", timeout=20000)
     page.wait_for_timeout(2000)
 
-    # /course/view.php 로 가는 모든 링크 수집
     all_links = page.locator("a[href*='/course/view.php']").all()
 
     courses = []
@@ -166,48 +166,40 @@ def get_courses(page):
     for a in all_links:
         try:
             href = a.get_attribute("href") or ""
-            # 링크 주변 텍스트(부모 컨테이너)에서 과목 코드 탐색
-            parent_text = a.evaluate("el => el.closest('li,tr,div') ? el.closest('li,tr,div').innerText : ''")
-            link_text   = a.inner_text().strip()
-            combined    = parent_text + " " + link_text
-
-            matched_code = next((c for c in COURSE_CODES if c in combined), None)
-            if not matched_code: continue
-            if href in seen: continue
-
-            # 과목명은 코드를 포함한 링크 텍스트 또는 부모 첫 줄
-            name = link_text if link_text else combined.split("\n")[0].strip()
+            name = a.inner_text().strip().replace("\n", " ")
+            if not href or not name or href in seen:
+                continue
             seen.add(href)
-            courses.append({"name": name, "url": href, "code": matched_code})
+            courses.append({"name": name, "url": href})
         except:
             continue
 
-    # COURSE_CODES 순서대로 정렬
-    courses.sort(key=lambda c: COURSE_CODES.index(c["code"]))
     return courses
 
 # ── 동영상 수집 ───────────────────────────────────────────────────────
 def scrape_videos(page, course_name):
     tasks = []
-    # ▶ play 아이콘을 가진 활동 행 탐색
-    # Moodle에서 vod/ucvod 모듈은 보통 li.activity.ucvod 또는 li.activity.vod
+    # Moodle에서 vod/ucvod 모듈: li.activity.ucvod, li.activity.vod
+    # li[class*='vod']는 ucvod도 매칭되어 중복 발생 → 명시적 클래스만 사용
     video_rows = page.locator(
-        "li.activity.ucvod, li.activity.vod, li.activity.unilvod, "
-        "li[class*='ucvod'], li[class*='vod']"
+        "li.activity.ucvod, li.activity.vod, li.activity.unilvod"
     ).all()
 
+    seen_names = set()
     for row in video_rows:
         try:
-            # 이름
-            name_el = row.locator(".activityname, .instancename, a").first
-            name    = name_el.inner_text().strip() if name_el.count() else ""
-            if not name: continue
+            # 이름: .instancename 텍스트만 (배지/아이콘 제외)
+            name_el = row.locator(".instancename").first
+            if not name_el.count():
+                name_el = row.locator(".activityname").first
+            name = name_el.inner_text().strip().split("\n")[0].strip() if name_el.count() else ""
+            if not name or name in seen_names: continue
+            seen_names.add(name)
 
             # 완료 여부
-            done = is_completed(row)
-            if done: continue
+            if is_completed(row): continue
 
-            # 날짜 범위 텍스트 (주황색/빨간색 텍스트)
+            # 날짜 범위 텍스트에서 종료일 추출
             row_text = row.inner_text()
             due_date = parse_video_end_date(row_text)
 
@@ -232,7 +224,10 @@ def scrape_assignments(page, course_name):
             # 이름 & 링크
             link_el = row.locator("a[href*='/mod/assign/']").first
             if not link_el.count(): continue
-            name = row.locator(".activityname, .instancename").first.inner_text().strip()
+            name_el = row.locator(".instancename").first
+            if not name_el.count():
+                name_el = row.locator(".activityname").first
+            name = name_el.inner_text().strip().split("\n")[0].strip() if name_el.count() else ""
             href = link_el.get_attribute("href")
             if not name or not href: continue
 
@@ -266,6 +261,10 @@ def scrape_assignments(page, course_name):
                 body_text = page.inner_text("body")
                 m = re.search(r"[Dd]ue\s*[Dd]ate[:\s]+(.{5,30})", body_text)
                 if m: due_date = parse_date(m.group(1))
+
+            # 상세 페이지에서도 못 찾으면 과제 이름에서 파싱 (예: "마감 5월 13일")
+            if not due_date:
+                due_date = parse_date(name)
 
             # 이미 제출했거나 지난 경우 스킵
             if sub_done: continue
