@@ -1,7 +1,7 @@
 """
 fetch_learnus.py
 ================
-연세대 SSO(infra.yonsei.ac.kr)로 로그인 후
+Playwright로 연세대 SSO 로그인 후
 LearnUS Moodle API로 과제/시험/동영상 일정을 수집해
 GAS(Google Apps Script) API로 Google Sheets에 직접 저장.
 """
@@ -13,7 +13,6 @@ import json
 import hashlib
 import getpass
 import requests
-from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 
 # ── 설정 ──────────────────────────────────────────────────────────────
@@ -50,154 +49,175 @@ def strip_html(text):
 def next_week():
     return (TODAY + timedelta(days=7)).isoformat()
 
-# ── SSO 로그인 → Moodle 토큰 발급 ────────────────────────────────────
+# ── Playwright SSO 로그인 ─────────────────────────────────────────────
 def sso_login(username, password):
     """
-    흐름:
-    1. learnus.org/login.php → SSO 버튼 링크 탐색
-    2. SSO 링크 클릭 → infra.yonsei.ac.kr 폼으로 이동
-    3. 연세대 ID/PW 제출
-    4. 세션 쿠키 획득
-    5. Moodle mobile 토큰 발급
+    Playwright 헤드리스 브라우저로:
+    1. learnus.org 접속 → 학위과정 탭 클릭
+    2. SSO 로그인 폼 입력
+    3. 세션 쿠키 추출
+    4. 쿠키로 Moodle mobile 토큰 발급
     """
-    from urllib.parse import urlparse, urljoin
+    from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
-    session = requests.Session()
-    session.headers.update({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    })
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        )
+        page = context.new_page()
 
-    # Step 1: learnus 로그인 페이지 접속
-    print("  → learnus.org 접속...")
-    r = session.get(f"{BASE_URL}/login/index.php", allow_redirects=True, timeout=15)
-    print(f"  → 로그인 페이지: {r.url[:60]}...")
+        # Step 1: learnus 접속
+        print("  → learnus.org 접속...")
+        page.goto(f"{BASE_URL}/login/index.php", wait_until="networkidle", timeout=20000)
+        print(f"  → 현재 URL: {page.url[:60]}...")
 
-    soup = BeautifulSoup(r.text, "html.parser")
+        # Step 2: "학위과정" 탭 클릭 (로그인 폼 표시)
+        try:
+            page.click("text=학위과정", timeout=5000)
+            print("  → '학위과정' 탭 클릭")
+            page.wait_for_timeout(1500)
+        except PWTimeout:
+            print("  → '학위과정' 탭 없음, 현재 상태로 진행")
 
-    # Step 2: SSO/OAuth 링크 탐색 (연세포털, SSO, OAuth2 버튼)
-    sso_url = _find_sso_link(soup, r.url)
-    if sso_url:
-        print(f"  → SSO 링크 발견: {sso_url[:60]}...")
-        r = session.get(sso_url, allow_redirects=True, timeout=15)
-        print(f"  → SSO 페이지: {r.url[:60]}...")
-        soup = BeautifulSoup(r.text, "html.parser")
+        # Step 3: SSO 링크/버튼 탐색 (연세포털, OAuth2 등)
+        sso_clicked = False
+        for selector in [
+            "text=연세포털",
+            "text=연세대학교",
+            "a[href*='oauth2']",
+            "a[href*='sso']",
+            "a[href*='infra.yonsei']",
+            ".btn-yonsei",
+        ]:
+            try:
+                page.click(selector, timeout=3000)
+                page.wait_for_load_state("networkidle", timeout=10000)
+                print(f"  → SSO 버튼 클릭: {selector}")
+                sso_clicked = True
+                break
+            except PWTimeout:
+                continue
 
-    # Step 3: 로그인 폼 탐색
-    form = soup.find("form")
-    if not form:
-        # 폼이 없으면 페이지 내용 일부 출력 (디버그)
-        print(f"  ❌ 로그인 폼을 찾을 수 없습니다.")
-        print(f"  현재 URL: {r.url}")
-        print(f"  페이지 미리보기: {soup.get_text()[:300]}")
-        sys.exit(1)
+        print(f"  → SSO 페이지: {page.url[:60]}...")
 
-    base_url = r.url
-    action = form.get("action", base_url)
-    if not action.startswith("http"):
-        action = urljoin(base_url, action)
+        # Step 4: ID/PW 입력 필드 탐색 및 입력
+        id_selectors = [
+            'input[name="userid"]', 'input[name="username"]',
+            'input[name="id"]',     'input[name="loginid"]',
+            'input[type="text"]',
+        ]
+        pw_selectors = [
+            'input[name="password"]', 'input[name="passwd"]',
+            'input[name="pw"]',       'input[type="password"]',
+        ]
 
-    # 숨겨진 필드 수집
-    hidden = {
-        inp["name"]: inp.get("value", "")
-        for inp in form.find_all("input", type="hidden")
-        if inp.get("name")
-    }
+        id_field = _find_selector(page, id_selectors)
+        pw_field = _find_selector(page, pw_selectors)
 
-    # ID/PW 필드명 자동 탐지
-    id_field = _find_field(form, ["userid", "username", "id", "loginid", "user_id"])
-    pw_field = _find_field(form, ["password", "passwd", "pw", "pass"])
+        if not id_field or not pw_field:
+            print(f"  ❌ 로그인 폼 필드를 찾을 수 없습니다.")
+            print(f"  현재 URL: {page.url}")
+            print(f"  페이지 텍스트: {page.inner_text('body')[:400]}")
+            browser.close()
+            sys.exit(1)
 
-    print(f"  → 폼 필드: ID={id_field}, PW={pw_field}")
-    print(f"  → POST → {action[:60]}...")
+        print(f"  → 폼 필드 발견: ID={id_field}, PW={pw_field}")
+        page.fill(id_field, username)
+        page.fill(pw_field, password)
 
-    # Step 4: 자격증명 제출
-    payload = {**hidden, id_field: username, pw_field: password}
-    r = session.post(action, data=payload, allow_redirects=True, timeout=15)
+        # Step 5: 제출
+        submit_selectors = [
+            'button[type="submit"]', 'input[type="submit"]',
+            'button:has-text("로그인")', 'button:has-text("Login")',
+            'input[value="로그인"]',
+        ]
+        submitted = False
+        for sel in submit_selectors:
+            try:
+                page.click(sel, timeout=3000)
+                submitted = True
+                break
+            except PWTimeout:
+                continue
 
-    # 로그인 성공 여부 확인
-    if "로그아웃" not in r.text and "logout" not in r.text.lower() and "dashboard" not in r.url:
-        err_soup = BeautifulSoup(r.text, "html.parser")
-        err_msg = err_soup.find(class_=re.compile(r"error|alert|invalid", re.I))
-        detail = err_msg.get_text(strip=True)[:80] if err_msg else "응답 확인 필요"
-        print(f"  ❌ SSO 로그인 실패: {detail}")
-        print(f"  현재 URL: {r.url}")
-        sys.exit(1)
+        if not submitted:
+            page.keyboard.press("Enter")
 
-    print("  ✅ SSO 로그인 성공!")
+        # Step 6: 로그인 완료 대기
+        try:
+            page.wait_for_url(f"{BASE_URL}/**", timeout=15000)
+        except PWTimeout:
+            pass
+        page.wait_for_load_state("networkidle", timeout=10000)
+        print(f"  → 로그인 후 URL: {page.url[:60]}...")
 
-    # Step 4: Moodle mobile 토큰 발급
-    token = _get_moodle_token(session)
-    return token
+        # 로그인 성공 확인
+        body_text = page.inner_text("body")
+        if "로그아웃" not in body_text and "logout" not in page.url.lower():
+            if "잘못된" in body_text or "incorrect" in body_text.lower() or "invalid" in body_text.lower():
+                print("  ❌ ID 또는 PW가 틀렸습니다.")
+            else:
+                print(f"  ⚠️  로그인 확인 불명확. 계속 진행합니다.")
 
-def _find_sso_link(soup, base_url):
-    """learnus 로그인 페이지에서 SSO/OAuth2/연세포털 링크 탐색"""
-    from urllib.parse import urljoin
-    keywords = ["sso", "oauth", "yonsei", "연세", "포털", "infra", "PmSSO"]
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        text = a.get_text(strip=True)
-        if any(k.lower() in href.lower() or k.lower() in text.lower() for k in keywords):
-            return href if href.startswith("http") else urljoin(base_url, href)
-    # 버튼 형태일 수도 있음
-    for btn in soup.find_all(["button", "input"], type=["submit", "button"]):
-        text = btn.get_text(strip=True) or btn.get("value", "")
-        if any(k.lower() in text.lower() for k in keywords):
-            form = btn.find_parent("form")
-            if form and form.get("action"):
-                action = form["action"]
-                return action if action.startswith("http") else urljoin(base_url, action)
+        print("  ✅ 로그인 완료!")
+
+        # Step 7: 쿠키 추출
+        cookies = {c["name"]: c["value"] for c in context.cookies()}
+
+        # Step 8: Moodle mobile 토큰 발급
+        token = _get_moodle_token_with_cookies(cookies)
+        browser.close()
+        return token
+
+def _find_selector(page, selectors):
+    """페이지에서 존재하는 첫 번째 selector 반환"""
+    for sel in selectors:
+        try:
+            if page.locator(sel).count() > 0:
+                return sel
+        except Exception:
+            continue
     return None
 
-def _find_field(form, candidates):
-    """폼에서 후보 필드명 중 실제 존재하는 것 반환"""
-    all_inputs = form.find_all("input")
-    names = [inp.get("name", "").lower() for inp in all_inputs]
-    for c in candidates:
-        if c in names:
-            return c
-    # 못 찾으면 text/password 타입 순서대로 반환
-    for inp in all_inputs:
-        if inp.get("type") == "text" and inp.get("name"):
-            return inp["name"]
-    return candidates[0]
-
-def _get_moodle_token(session):
+def _get_moodle_token_with_cookies(cookies):
     """세션 쿠키로 Moodle mobile 토큰 발급"""
-    import random, string, urllib.parse
+    import random, string, base64
 
     passport = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
     url = f"{BASE_URL}/admin/tool/mobile/launch.php?service=moodle_mobile_app&passport={passport}"
 
-    r = session.get(url, allow_redirects=False, timeout=15)
+    session = requests.Session()
+    for name, value in cookies.items():
+        session.cookies.set(name, value)
 
-    # 리다이렉트 Location 헤더에서 토큰 추출
+    r = session.get(url, allow_redirects=False, timeout=15)
     location = r.headers.get("Location", "")
+
     if not location:
-        # 리다이렉트를 따라가서 최종 URL에서 추출
         r = session.get(url, allow_redirects=True, timeout=15)
         location = r.url
 
-    # moodlemobile://token=BASE64_STRING 형식
-    match = re.search(r"token=([A-Za-z0-9+/=]+)", location)
+    # moodlemobile://token=BASE64 형식
+    match = re.search(r"token=([A-Za-z0-9+/=_-]+)", location)
     if match:
-        import base64
         token_b64 = match.group(1)
         try:
-            decoded = base64.b64decode(token_b64 + "==").decode("utf-8")
-            # 형식: "PRIVATETOKEN:::PUBLICTOKEN" 또는 그냥 토큰
+            padding = 4 - len(token_b64) % 4
+            decoded = base64.b64decode(token_b64 + "=" * padding).decode("utf-8")
             token = decoded.split(":::")[0]
             print(f"  ✅ Moodle 토큰 발급 성공")
             return token
         except Exception:
             pass
 
-    # 직접 토큰이 URL에 있는 경우
-    match = re.search(r"token=([a-f0-9]{32})", location)
+    # 32자리 hex 토큰 형식
+    match = re.search(r"[a-f0-9]{32}", location)
     if match:
         print(f"  ✅ Moodle 토큰 발급 성공")
-        return match.group(1)
+        return match.group(0)
 
-    print(f"  ❌ 토큰 추출 실패. Location: {location[:100]}")
+    print(f"  ❌ 토큰 추출 실패. Location: {location[:150]}")
     sys.exit(1)
 
 # ── Moodle REST API ────────────────────────────────────────────────────
@@ -324,7 +344,7 @@ def push_to_gas(tasks):
 # ── 메인 ──────────────────────────────────────────────────────────────
 def main():
     print("=" * 52)
-    print("  LearnUS 일정 자동 수집기 (SSO 방식)")
+    print("  LearnUS 일정 자동 수집기")
     print(f"  기준일: {TODAY} (KST)")
     print("=" * 52)
 

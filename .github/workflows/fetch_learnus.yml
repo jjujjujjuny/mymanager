@@ -25,7 +25,9 @@ jobs:
           python-version: '3.11'
 
       - name: 의존성 설치
-        run: pip install requests beautifulsoup4
+        run: |
+          pip install requests playwright
+          playwright install chromium --with-deps
 
       - name: Secrets 확인 (디버그)
         env:
