@@ -1,5 +1,6 @@
 import { store } from '../store.js';
 import { todayStr, todayDayKey, parseDate, daysLeft, dateStr, esc, taskUrgency } from '../utils.js';
+import { getTodayIdiom, isIdiomDoneToday, markIdiomDone } from '../idioms.js';
 import { toggleHabitLog } from './habits.js';
 import { toggleTask } from './tasks.js';
 import { renderHabits } from './habits.js';
@@ -61,6 +62,32 @@ export function renderHome() {
     </div>`;
   }).join('') : '<div class="empty">오늘 설정된 습관이 없어요</div>';
 
+  renderIdiom();
+  updateCharMsg();
+}
+
+export function renderIdiom() {
+  const idiom = getTodayIdiom();
+  document.getElementById('idiom-en').textContent = idiom.en;
+  document.getElementById('idiom-kr').textContent = idiom.kr;
+  document.getElementById('idiom-ex').textContent = '"' + idiom.ex + '"';
+
+  const done = isIdiomDoneToday();
+  document.getElementById('idiom-reveal').style.display  = done ? '' : 'none';
+  document.getElementById('idiom-show-btn').style.display = done ? 'none' : '';
+  document.getElementById('idiom-done-btn').style.display = done ? 'none' : 'none'; // 뜻 보기 후 표시
+  document.getElementById('idiom-checked').style.display = done ? '' : 'none';
+}
+
+export function idiomReveal() {
+  document.getElementById('idiom-reveal').style.display   = '';
+  document.getElementById('idiom-show-btn').style.display = 'none';
+  document.getElementById('idiom-done-btn').style.display = '';
+}
+
+export function idiomDone() {
+  markIdiomDone();
+  renderIdiom();
   updateCharMsg();
 }
 

@@ -68,6 +68,23 @@
       <div class="card-hdr"><h2>✅ 오늘 습관</h2><a class="link-sm" onclick="switchTab('habits')">전체보기</a></div>
       <div class="card-body" id="home-habits"></div>
     </div>
+    <div class="card" id="idiom-card">
+      <div class="card-hdr"><h2>💬 오늘의 영어 숙어</h2></div>
+      <div class="card-body">
+        <div id="idiom-body">
+          <div class="idiom-en" id="idiom-en"></div>
+          <div class="idiom-reveal" id="idiom-reveal" style="display:none">
+            <div class="idiom-kr" id="idiom-kr"></div>
+            <div class="idiom-ex" id="idiom-ex"></div>
+          </div>
+          <div id="idiom-btns" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+            <button class="btn-secondary" id="idiom-show-btn" onclick="idiomReveal()">뜻 보기</button>
+            <button class="btn-primary"   id="idiom-done-btn" onclick="idiomDone()" style="display:none">✓ 외웠어!</button>
+          </div>
+          <div id="idiom-checked" style="display:none;color:#22c55e;font-size:.85rem;font-weight:600;margin-top:10px">✅ 오늘 숙어 완료!</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- TASKS -->

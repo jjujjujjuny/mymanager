@@ -1,7 +1,7 @@
 import { store } from './store.js';
 import { loadAll } from './api.js';
 import { todayStr, AVATARS, esc } from './utils.js';
-import { renderHome, updateCharMsg } from './render/home.js';
+import { renderHome, updateCharMsg, idiomReveal, idiomDone } from './render/home.js';
 import { renderTasks, setFilter, openTaskModal, saveTask } from './render/tasks.js';
 import { renderWeek, shiftWeek, openEventModal, saveEvent } from './render/schedule.js';
 import { renderHabits, openHabitModal, saveHabit } from './render/habits.js';
@@ -21,6 +21,8 @@ window.saveHabit      = saveHabit;
 window.openGoalModal  = openGoalModal;
 window.saveGoal       = saveGoal;
 window.closeModal     = closeModal;
+window.idiomReveal    = idiomReveal;
+window.idiomDone      = idiomDone;
 window.openSettings   = openSettings;
 window.saveSettings   = saveSettings;
 window.openImport     = openImport;
