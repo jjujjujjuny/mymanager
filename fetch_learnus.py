@@ -54,37 +54,47 @@ def next_week():
 def sso_login(username, password):
     """
     흐름:
-    1. learnus.org/login → SSO 페이지로 리다이렉트
-    2. SSO 폼 파싱 → 연세대 ID/PW 제출
-    3. 세션 쿠키 획득
-    4. Moodle mobile 토큰 발급 엔드포인트 호출
+    1. learnus.org/login.php → SSO 버튼 링크 탐색
+    2. SSO 링크 클릭 → infra.yonsei.ac.kr 폼으로 이동
+    3. 연세대 ID/PW 제출
+    4. 세션 쿠키 획득
+    5. Moodle mobile 토큰 발급
     """
+    from urllib.parse import urlparse, urljoin
+
     session = requests.Session()
     session.headers.update({
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     })
 
-    # Step 1: learnus 로그인 페이지 → SSO로 리다이렉트
+    # Step 1: learnus 로그인 페이지 접속
     print("  → learnus.org 접속...")
     r = session.get(f"{BASE_URL}/login/index.php", allow_redirects=True, timeout=15)
-    login_url = r.url
-    print(f"  → 로그인 페이지: {login_url[:60]}...")
+    print(f"  → 로그인 페이지: {r.url[:60]}...")
 
-    # Step 2: SSO 폼 파싱
     soup = BeautifulSoup(r.text, "html.parser")
+
+    # Step 2: SSO/OAuth 링크 탐색 (연세포털, SSO, OAuth2 버튼)
+    sso_url = _find_sso_link(soup, r.url)
+    if sso_url:
+        print(f"  → SSO 링크 발견: {sso_url[:60]}...")
+        r = session.get(sso_url, allow_redirects=True, timeout=15)
+        print(f"  → SSO 페이지: {r.url[:60]}...")
+        soup = BeautifulSoup(r.text, "html.parser")
+
+    # Step 3: 로그인 폼 탐색
     form = soup.find("form")
     if not form:
-        print("  ❌ 로그인 폼을 찾을 수 없습니다.")
+        # 폼이 없으면 페이지 내용 일부 출력 (디버그)
+        print(f"  ❌ 로그인 폼을 찾을 수 없습니다.")
+        print(f"  현재 URL: {r.url}")
+        print(f"  페이지 미리보기: {soup.get_text()[:300]}")
         sys.exit(1)
 
-    action = form.get("action", login_url)
-    if action.startswith("/"):
-        # 상대 경로면 현재 호스트 기반으로 절대 경로 변환
-        from urllib.parse import urlparse
-        parsed = urlparse(login_url)
-        action = f"{parsed.scheme}://{parsed.netloc}{action}"
-    elif not action.startswith("http"):
-        action = login_url
+    base_url = r.url
+    action = form.get("action", base_url)
+    if not action.startswith("http"):
+        action = urljoin(base_url, action)
 
     # 숨겨진 필드 수집
     hidden = {
@@ -94,19 +104,18 @@ def sso_login(username, password):
     }
 
     # ID/PW 필드명 자동 탐지
-    id_field  = _find_field(form, ["userid", "username", "id", "loginid", "user_id"])
-    pw_field  = _find_field(form, ["password", "passwd", "pw", "pass"])
+    id_field = _find_field(form, ["userid", "username", "id", "loginid", "user_id"])
+    pw_field = _find_field(form, ["password", "passwd", "pw", "pass"])
 
     print(f"  → 폼 필드: ID={id_field}, PW={pw_field}")
     print(f"  → POST → {action[:60]}...")
 
-    # Step 3: SSO에 자격증명 제출
+    # Step 4: 자격증명 제출
     payload = {**hidden, id_field: username, pw_field: password}
     r = session.post(action, data=payload, allow_redirects=True, timeout=15)
 
     # 로그인 성공 여부 확인
     if "로그아웃" not in r.text and "logout" not in r.text.lower() and "dashboard" not in r.url:
-        # 로그인 실패 메시지 탐색
         err_soup = BeautifulSoup(r.text, "html.parser")
         err_msg = err_soup.find(class_=re.compile(r"error|alert|invalid", re.I))
         detail = err_msg.get_text(strip=True)[:80] if err_msg else "응답 확인 필요"
@@ -119,6 +128,25 @@ def sso_login(username, password):
     # Step 4: Moodle mobile 토큰 발급
     token = _get_moodle_token(session)
     return token
+
+def _find_sso_link(soup, base_url):
+    """learnus 로그인 페이지에서 SSO/OAuth2/연세포털 링크 탐색"""
+    from urllib.parse import urljoin
+    keywords = ["sso", "oauth", "yonsei", "연세", "포털", "infra", "PmSSO"]
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        text = a.get_text(strip=True)
+        if any(k.lower() in href.lower() or k.lower() in text.lower() for k in keywords):
+            return href if href.startswith("http") else urljoin(base_url, href)
+    # 버튼 형태일 수도 있음
+    for btn in soup.find_all(["button", "input"], type=["submit", "button"]):
+        text = btn.get_text(strip=True) or btn.get("value", "")
+        if any(k.lower() in text.lower() for k in keywords):
+            form = btn.find_parent("form")
+            if form and form.get("action"):
+                action = form["action"]
+                return action if action.startswith("http") else urljoin(base_url, action)
+    return None
 
 def _find_field(form, candidates):
     """폼에서 후보 필드명 중 실제 존재하는 것 반환"""
