@@ -72,34 +72,24 @@ def sso_login(username, password):
         page.goto(f"{BASE_URL}/login/index.php", wait_until="networkidle", timeout=20000)
         print(f"  → 현재 URL: {page.url[:60]}...")
 
-        # Step 2: "학위과정" 탭 클릭 (로그인 폼 표시)
-        try:
-            page.click("text=학위과정", timeout=5000)
-            print("  → '학위과정' 탭 클릭")
-            page.wait_for_timeout(1500)
-        except PWTimeout:
-            print("  → '학위과정' 탭 없음, 현재 상태로 진행")
-
-        # Step 3: SSO 링크/버튼 탐색 (연세포털, OAuth2 등)
-        sso_clicked = False
+        # Step 2: "연세포털 로그인" 버튼 클릭 → infra.yonsei.ac.kr 로 이동
         for selector in [
-            "text=연세포털",
-            "text=연세대학교",
-            "a[href*='oauth2']",
-            "a[href*='sso']",
+            "text=연세포털 로그인",
+            "a:has-text('연세포털 로그인')",
+            "button:has-text('연세포털 로그인')",
             "a[href*='infra.yonsei']",
-            ".btn-yonsei",
+            "a[href*='PmSSOService']",
+            "a[href*='oauth2']",
         ]:
             try:
-                page.click(selector, timeout=3000)
-                page.wait_for_load_state("networkidle", timeout=10000)
-                print(f"  → SSO 버튼 클릭: {selector}")
-                sso_clicked = True
+                page.click(selector, timeout=4000)
+                page.wait_for_load_state("networkidle", timeout=15000)
+                print(f"  → 클릭 성공: {selector}")
                 break
             except PWTimeout:
                 continue
 
-        print(f"  → SSO 페이지: {page.url[:60]}...")
+        print(f"  → SSO 페이지: {page.url[:70]}...")
 
         # Step 4: ID/PW 입력 필드 탐색 및 입력
         id_selectors = [
