@@ -140,44 +140,51 @@ def login(pw, username, password):
     print(f"  ✅ 로그인 완료 ({page.url[:50]}...)")
     return page, browser
 
+# ── 이번 학기 수강 과목 코드 (고정) ─────────────────────────────────
+COURSE_CODES = [
+    "MAT2013.02-00",  # 확률통계
+    "MAT2017.01-00",  # 공학수학(4)
+    "MEU3002.02-00",  # 메카니즘설계
+    "MEU3005.01-00",  # 기계공학실험(2)
+    "MEU3010.01-00",  # 마이크로기계시스템
+    "MEU4002.01-00",  # 기계공학세미나
+]
+
 # ── 과목 목록 수집 ────────────────────────────────────────────────────
 def get_courses(page):
     """
-    /my/ 대시보드에서 교과/학부 과목만 수집.
-    비교과, 자율강좌는 제외.
+    /my/ 에서 전체 과목 링크를 가져온 뒤 COURSE_CODES 에 해당하는 것만 반환.
     """
     page.goto(f"{BASE_URL}/my/", wait_until="networkidle", timeout=20000)
     page.wait_for_timeout(2000)
 
+    # /course/view.php 로 가는 모든 링크 수집
+    all_links = page.locator("a[href*='/course/view.php']").all()
+
     courses = []
-    # 과목 목록 행 순회
-    items = page.locator(".course-info-container, .coursename, [data-region='course-content']").all()
-
-    # 좀 더 넓게: 과목 링크가 있는 모든 행을 찾아서 배지 확인
-    rows = page.locator("li, .course-listitem, [data-region='course-item'], tr").all()
-    for row in rows:
+    seen = set()
+    for a in all_links:
         try:
-            text = row.inner_text()
-            # 교과/학부 배지 확인 (비교과, 자율강좌 제외)
-            if "교과" not in text or "비교과" in text: continue
+            href = a.get_attribute("href") or ""
+            # 링크 주변 텍스트(부모 컨테이너)에서 과목 코드 탐색
+            parent_text = a.evaluate("el => el.closest('li,tr,div') ? el.closest('li,tr,div').innerText : ''")
+            link_text   = a.inner_text().strip()
+            combined    = parent_text + " " + link_text
 
-            link = row.locator("a[href*='/course/view.php']").first
-            if not link.count(): continue
+            matched_code = next((c for c in COURSE_CODES if c in combined), None)
+            if not matched_code: continue
+            if href in seen: continue
 
-            href  = link.get_attribute("href")
-            name  = link.inner_text().strip()
-            if href and name:
-                courses.append({"name": name, "url": href})
-        except: continue
+            # 과목명은 코드를 포함한 링크 텍스트 또는 부모 첫 줄
+            name = link_text if link_text else combined.split("\n")[0].strip()
+            seen.add(href)
+            courses.append({"name": name, "url": href, "code": matched_code})
+        except:
+            continue
 
-    # 중복 제거 (URL 기준)
-    seen, unique = set(), []
-    for c in courses:
-        if c["url"] not in seen:
-            seen.add(c["url"])
-            unique.append(c)
-
-    return unique
+    # COURSE_CODES 순서대로 정렬
+    courses.sort(key=lambda c: COURSE_CODES.index(c["code"]))
+    return courses
 
 # ── 동영상 수집 ───────────────────────────────────────────────────────
 def scrape_videos(page, course_name):
