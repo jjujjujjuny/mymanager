@@ -26,7 +26,7 @@ export async function loadAll() {
     if (d.error) throw new Error(d.error);
 
     const prevLogs = store.get('habit_logs');
-    ['tasks','events','habits','habit_logs','goals','classes'].forEach(k => {
+    ['tasks','events','habits','habit_logs','goals','classes','study_plans'].forEach(k => {
       store.set(k, Array.isArray(d[k]) ? d[k] : []);
     });
     // 로컬에서 아직 GAS에 반영 안 된 로그 보존

@@ -216,6 +216,29 @@ textarea.inp{resize:none}
 .tt-cell.today-col{background:#fafafe}
 .tt-block{position:absolute;left:1px;right:1px;border-radius:5px;padding:2px 4px;font-size:.6rem;font-weight:600;color:#fff;overflow:hidden;line-height:1.3;z-index:1}
 
+/* STUDY PLAN */
+.study-day-block{display:flex;flex-direction:column;gap:0}
+.study-day-block.past .study-day-header{color:#94a3b8;background:#f8fafc}
+.study-day-block.past .study-item{opacity:.55}
+.study-day-header{font-size:.82rem;font-weight:700;color:#64748b;background:#f1f5f9;padding:7px 14px;border-radius:12px 12px 0 0;letter-spacing:.02em}
+.study-day-header.today{color:#6366f1;background:#eef2ff}
+.study-day-items{display:flex;flex-direction:column;gap:0;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;overflow:hidden}
+.study-item{padding:11px 14px;background:#fff;border-bottom:1px solid #f1f5f9;transition:background .15s}
+.study-item:last-child{border-bottom:none}
+.study-item.done{background:#fafafa}
+.study-item-main{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.study-item-info{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.study-subject{font-size:.9rem;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.study-item.done .study-subject{text-decoration:line-through;color:#94a3b8}
+.study-duration{font-size:.75rem;color:#6366f1;background:#eef2ff;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.study-item-actions{display:flex;gap:4px;flex-shrink:0}
+.study-check{width:30px;height:30px;border-radius:50%;font-size:.85rem;border:2px solid #e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.study-check:hover{border-color:#6366f1;color:#6366f1}
+.study-check.chk{background:#6366f1;border-color:#6366f1;color:#fff}
+.study-content{font-size:.78rem;color:#64748b;margin-top:5px;line-height:1.5}
+.study-item.done .study-content{color:#b0bec5}
+.study-done-badge{font-size:.7rem;color:#10b981;margin-top:4px}
+
 /* IDIOM CARD */
 .idiom-en{font-size:1.15rem;font-weight:700;color:#1e293b;letter-spacing:.01em}
 .idiom-kr{font-size:.9rem;font-weight:600;color:#6366f1;margin-top:8px}

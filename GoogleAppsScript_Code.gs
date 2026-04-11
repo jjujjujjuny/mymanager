@@ -8,7 +8,7 @@
 const SPREADSHEET_ID = '1uiv-MYcc5bnWR-RNTt31YA8JOas2WOpEmoQW_e9jqbI';
 
 // 사용할 시트 이름 목록
-const SHEETS = ['tasks', 'events', 'habits', 'habit_logs', 'goals', 'classes'];
+const SHEETS = ['tasks', 'events', 'habits', 'habit_logs', 'goals', 'classes', 'study_plans'];
 
 function testClasses() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);

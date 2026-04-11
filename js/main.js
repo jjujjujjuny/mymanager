@@ -7,6 +7,7 @@ import { renderWeek, shiftWeek, openEventModal, saveEvent } from './render/sched
 import { renderHabits, openHabitModal, saveHabit } from './render/habits.js';
 import { renderGoals, openGoalModal, saveGoal } from './render/goals.js';
 import { renderTimetable } from './render/timetable.js';
+import { renderStudyPlan, openStudyPlanModal, saveStudyPlan, toggleStudyDone, deleteStudyPlan } from './render/studyplan.js';
 
 // ===== 전역 노출 (HTML onclick 속성에서 호출) =====
 window.switchTab      = switchTab;
@@ -20,7 +21,11 @@ window.openHabitModal = openHabitModal;
 window.saveHabit      = saveHabit;
 window.openGoalModal  = openGoalModal;
 window.saveGoal       = saveGoal;
-window.closeModal     = closeModal;
+window.closeModal         = closeModal;
+window.openStudyPlanModal = openStudyPlanModal;
+window.saveStudyPlan      = saveStudyPlan;
+window.toggleStudyDone    = toggleStudyDone;
+window.deleteStudyPlan    = deleteStudyPlan;
 window.idiomReveal    = idiomReveal;
 window.idiomDone      = idiomDone;
 window.openSettings   = openSettings;
@@ -34,7 +39,7 @@ window.loadAll        = loadAll;
 
 // ===== 렌더 전체 =====
 export function renderAll() {
-  renderHome(); renderTasks(); renderWeek(); renderHabits(); renderGoals(); renderTimetable();
+  renderHome(); renderTasks(); renderWeek(); renderHabits(); renderGoals(); renderTimetable(); renderStudyPlan();
 }
 
 // ===== 탭 전환 =====
@@ -124,7 +129,7 @@ function doImport() {
 
   const { api } = window._api || {};
   let added = 0;
-  ['tasks','events','habits','habit_logs','goals','classes'].forEach(k => {
+  ['tasks','events','habits','habit_logs','goals','classes','study_plans'].forEach(k => {
     if (!Array.isArray(data[k])) return;
     const ex = store.get(k), ids = new Set(ex.map(x => x.id));
     const nw = data[k].filter(x => !ids.has(x.id));
@@ -149,7 +154,8 @@ function doExport() {
   const data = {
     tasks: store.get('tasks'), events: store.get('events'),
     habits: store.get('habits'), habit_logs: store.get('habit_logs'),
-    goals: store.get('goals'), classes: store.get('classes')
+    goals: store.get('goals'), classes: store.get('classes'),
+    study_plans: store.get('study_plans')
   };
   const json = JSON.stringify(data, null, 2);
   navigator.clipboard.writeText(json).catch(() => {

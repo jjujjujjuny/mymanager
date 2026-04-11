@@ -7,7 +7,8 @@ const _data = {
   habits: [],
   habit_logs: [],
   goals: [],
-  classes: []
+  classes: [],
+  study_plans: []
 };
 
 export const store = {
