@@ -27,8 +27,10 @@ export async function loadAll() {
 
     const prevLogs = store.get('habit_logs');
     ['tasks','events','habits','habit_logs','goals','classes','study_plans'].forEach(k => {
-      if (Array.isArray(d[k])) store.set(k, d[k]);
-      else if (!store.get(k).length) store.set(k, []);
+      const gasData = d[k];
+      if (!Array.isArray(gasData)) return;
+      // GAS가 빈 배열을 반환해도 로컬에 데이터가 있으면 덮어쓰지 않음
+      if (gasData.length > 0 || !store.get(k).length) store.set(k, gasData);
     });
     // 로컬에서 아직 GAS에 반영 안 된 로그 보존
     const gasLogIds = new Set(store.get('habit_logs').map(l => String(l.id)));
