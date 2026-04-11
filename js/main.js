@@ -121,14 +121,14 @@ function openImport() {
   openModal('m-import');
 }
 
-function doImport() {
+async function doImport() {
   const raw = document.getElementById('import-json').value.trim();
   if (!raw) { showIM('아무것도 없는데?', '#dc2626'); return; }
   let data;
   try { data = JSON.parse(raw); } catch { showIM('JSON 형식이 잘못됐어.', '#dc2626'); return; }
 
-  const { api } = window._api || {};
   let added = 0;
+  const allNew = [];
   ['tasks','events','habits','habit_logs','goals','classes','study_plans'].forEach(k => {
     if (!Array.isArray(data[k])) return;
     const ex = store.get(k), ids = new Set(ex.map(x => x.id));
@@ -136,12 +136,18 @@ function doImport() {
     nw.forEach(item => { if (!item.id) item.id = crypto.randomUUID(); });
     added += nw.length;
     store.set(k, [...ex, ...nw]);
-    // 동적 import로 api 사용
-    import('./api.js').then(({ api }) => nw.forEach(item => api.upsert(k, item)));
+    nw.forEach(item => allNew.push({ k, item }));
   });
   if (data.cfg) { store.saveCfg({ ...store.cfg(), ...data.cfg }); applySettings(store.cfg()); }
   renderAll();
-  showIM(`완료! ${added}개 추가됐어 ✅`, '#10b981');
+  showIM(`완료! ${added}개 추가됐어 — GAS에 저장 중...`, '#10b981');
+
+  // GAS에 순차 저장 (동시 요청 충돌 방지)
+  const { api: apiMod } = await import('./api.js');
+  for (const { k, item } of allNew) {
+    await apiMod.upsert(k, item);
+  }
+  showIM(`완료! ${added}개 저장됨`, '#10b981');
   setTimeout(() => closeModal('m-import'), 1800);
 }
 
