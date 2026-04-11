@@ -1,7 +1,7 @@
 import { store } from './store.js';
 import { dateStr } from './utils.js';
 
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwWJ563ydzFxdtXS2L99AwlixvWrFek7NYhRv6EJWgZdaRBJwhG0HpuAnFwEMSoCZXhEw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyXt07M-sfzG0_AN1nI9v61KhpbrMEOSfLQDTcfjWEnSpwPV2oAvSO2Nt2BMMbnPmiyRg/exec';
 
 export function showSync(state, detail) {
   const el = document.getElementById('sync-bar');
