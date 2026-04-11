@@ -19,8 +19,8 @@ export function renderHome() {
   uel.innerHTML = urgent.length ? urgent.slice(0, 3).map(t => {
     const dl = daysLeft(t.due);
     const b = dl < 0
-      ? '<span class="badge badge-red">⚠️ 지남</span>'
-      : dl === 0 ? '<span class="badge badge-red">오늘!</span>'
+      ? '<span class="badge badge-red">지남</span>'
+      : dl === 0 ? '<span class="badge badge-red">오늘</span>'
       : dl === 1 ? '<span class="badge badge-orange">내일</span>'
       : `<span class="badge badge-yellow">${dl}일</span>`;
     return `<div class="row">
@@ -30,7 +30,7 @@ export function renderHome() {
         <div class="row-sub">${esc(t.subject || '과목 미입력')}</div>
       </div>${b}
     </div>`;
-  }).join('') : '<div class="empty">곧 마감인 항목이 없어요 👍</div>';
+  }).join('') : '<div class="empty">곧 마감인 항목이 없습니다</div>';
 
   // 오늘 일정 (수업 + 이벤트)
   const evts = store.get('events').filter(e => dateStr(e.date) === ts);
@@ -38,13 +38,13 @@ export function renderHome() {
   const todayDayKey2 = ['sun','mon','tue','wed','thu','fri','sat'][todayDayIdx];
   const cls = store.get('classes').filter(c => c.day === todayDayKey2);
   const combined = [
-    ...cls.map(c => ({ s: c.start || '', html: `<div class="row"><span class="badge" style="background:#6366f1;color:#fff;padding:2px 7px;border-radius:6px;font-size:.7rem;min-width:48px;text-align:center">${c.start || '?'}</span><span style="margin-left:10px;font-size:.85rem;font-weight:600">${esc(c.name)}</span><span style="margin-left:6px;font-size:.72rem;color:#94a3b8">${esc(c.room || '')}</span></div>` })),
-    ...evts.map(e => ({ s: e.start || '', html: `<div class="row"><span class="badge badge-indigo" style="min-width:48px;text-align:center">${e.start || '종일'}</span><span style="margin-left:10px;font-size:.85rem">${esc(e.title)}</span></div>` }))
+    ...cls.map(c => ({ s: c.start || '', html: `<div class="event-item"><span class="event-time cls">${c.start || '?'}</span><span class="event-title">${esc(c.name)}</span><span class="event-room">${esc(c.room || '')}</span></div>` })),
+    ...evts.map(e => ({ s: e.start || '', html: `<div class="event-item"><span class="event-time${e.start ? '' : ' allday'}">${e.start || '종일'}</span><span class="event-title">${esc(e.title)}</span></div>` }))
   ].sort((a, b) => a.s > b.s ? 1 : a.s < b.s ? -1 : 0);
 
   document.getElementById('home-sched').innerHTML = combined.length
     ? combined.map(x => x.html).join('')
-    : '<div class="empty">오늘 일정이 없어요</div>';
+    : '<div class="empty">오늘 일정이 없습니다</div>';
 
   // 오늘 습관
   const habits = store.get('habits'), logs = store.get('habit_logs'), dk = todayDayKey();
@@ -57,10 +57,10 @@ export function renderHome() {
   hel.innerHTML = todayH.length ? todayH.map(h => {
     const done = logs.some(l => l.hid === h.id && l.date === ts);
     return `<div class="row">
-      <button data-qhid="${h.id}" style="font-size:1.3rem;margin-right:10px">${done ? '✅' : '⬜'}</button>
-      <span style="font-size:.85rem;${done ? 'text-decoration:line-through;color:#94a3b8' : ''}">${h.icon} ${esc(h.name)}</span>
+      <button class="habit-check${done ? ' done-chk' : ''}" data-qhid="${h.id}">✓</button>
+      <span style="font-size:13px;font-weight:500;${done ? 'text-decoration:line-through;color:#94a3b8' : 'color:#0f172a'}">${esc(h.name)}</span>
     </div>`;
-  }).join('') : '<div class="empty">오늘 설정된 습관이 없어요</div>';
+  }).join('') : '<div class="empty">오늘 설정된 습관이 없습니다</div>';
 
   renderIdiom();
   updateCharMsg();

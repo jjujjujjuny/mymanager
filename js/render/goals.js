@@ -6,20 +6,22 @@ import { openModal, closeModal } from '../main.js';
 export function renderGoals() {
   const goals = store.get('goals');
   const el = document.getElementById('goals-list');
+  const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`;
+  const SVG_PLUS = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>`;
   el.innerHTML = goals.length ? goals.map(g => {
     const st = g.subtasks || [], done = st.filter(s => s.done).length;
     const pct = st.length ? Math.round(done / st.length * 100) : (g.progress || 0);
     const dl = g.deadline ? daysLeft(g.deadline) : null;
     return `<div class="goal-card"><div class="goal-body">
       <div style="display:flex;justify-content:space-between;gap:8px">
-        <div>
+        <div style="flex:1;min-width:0">
           <div class="goal-title">${esc(g.title)}</div>
           ${g.desc ? `<div class="goal-desc">${esc(g.desc)}</div>` : ''}
-          ${g.deadline ? `<div class="goal-date">📅 ${fmtDate(g.deadline)} ${dl !== null ? `(${dl < 0 ? '지남' : dl + '일 남음'})` : ''}</div>` : ''}
+          ${g.deadline ? `<div class="goal-date">${fmtDate(g.deadline)}${dl !== null ? ` · ${dl < 0 ? '기간 지남' : dl + '일 남음'}` : ''}</div>` : ''}
         </div>
-        <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="act-btn" data-addsub="${g.id}">➕</button>
-          <button class="act-btn" data-gdel="${g.id}">🗑️</button>
+        <div style="display:flex;gap:2px;flex-shrink:0">
+          <button class="act-btn" data-addsub="${g.id}">${SVG_PLUS}</button>
+          <button class="act-btn" data-gdel="${g.id}">${SVG_TRASH}</button>
         </div>
       </div>
       <div class="progress-wrap">
@@ -27,12 +29,12 @@ export function renderGoals() {
         <div class="progress-bar-bg"><div class="progress-bar" style="width:${pct}%"></div></div>
       </div>
       ${st.length ? `<div class="subtasks">${st.map(s => `<div class="subtask-row">
-        <button class="sub-check" data-gid="${g.id}" data-sid="${s.id}">${s.done ? '✅' : '⬜'}</button>
+        <button class="sub-check${s.done ? ' done-sub' : ''}" data-gid="${g.id}" data-sid="${s.id}">✓</button>
         <span class="sub-text${s.done ? ' done' : ''}">${esc(s.text)}</span>
       </div>`).join('')}</div>` : ''}
-      <button class="add-sub" data-addsub="${g.id}">+ 세부 목표 추가</button>
+      <button class="add-sub" data-addsub="${g.id}">${SVG_PLUS} 세부 목표 추가</button>
     </div></div>`;
-  }).join('') : `<div class="card"><div class="card-body"><div class="empty" style="text-align:center;padding:20px">🎯 목표를 추가해보세요!</div></div></div>`;
+  }).join('') : `<div class="card"><div class="card-body"><div class="empty" style="text-align:center;padding:20px">목표를 추가해보세요</div></div></div>`;
 }
 
 // 이벤트 위임

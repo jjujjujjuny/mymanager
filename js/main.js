@@ -109,7 +109,7 @@ function saveSettings() {
 
 function applySettings(cfg) {
   const av = cfg.avatar || '🐱', nm = cfg.charName || '비서';
-  ['hdr-av','char-av','char-fab','cp-av'].forEach(id => document.getElementById(id).textContent = av);
+  ['char-av','char-fab','cp-av'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = av; });
   document.getElementById('cp-name').textContent = nm;
 }
 

@@ -12,27 +12,28 @@ export function renderHabits() {
   const ts = todayStr(), dk = todayDayKey();
   const todayH = habits.filter(h => Array.isArray(h.days) && h.days.includes(dk));
 
+  const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`;
   const tel = document.getElementById('habits-today');
   tel.innerHTML = todayH.length ? todayH.map(h => {
     const done = logs.some(l => l.hid === h.id && l.date === ts);
     return `<div class="habit-row">
-      <button class="habit-check" data-hid="${h.id}">${done ? '✅' : '⬜'}</button>
-      <div>
-        <div class="habit-name${done ? ' done' : ''}">${h.icon} ${esc(h.name)}</div>
+      <button class="habit-check${done ? ' done-chk' : ''}" data-hid="${h.id}">✓</button>
+      <div style="flex:1;min-width:0">
+        <div class="habit-name${done ? ' done' : ''}">${esc(h.name)}</div>
         <div class="habit-days">${(h.days || []).map(d => DKR[d]).join(' ')}</div>
       </div>
-      <button class="act-btn" data-hdel="${h.id}">🗑️</button>
+      <button class="act-btn" data-hdel="${h.id}">${SVG_TRASH}</button>
     </div>`;
-  }).join('') : '<div class="empty">오늘 설정된 습관이 없어요!</div>';
+  }).join('') : '<div class="empty">오늘 설정된 습관이 없습니다</div>';
 
   const others = habits.filter(h => !Array.isArray(h.days) || !h.days.includes(dk));
   const ael = document.getElementById('habits-all');
   ael.innerHTML = others.length ? `<div class="card"><div class="card-hdr"><h3>다른 날 습관</h3></div><div class="card-body">${
     others.map(h => `<div class="row">
-      <span style="font-size:.85rem">${h.icon} ${esc(h.name)}</span>
+      <span style="font-size:13px;font-weight:500;color:#0f172a">${esc(h.name)}</span>
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:.7rem;color:#94a3b8">${(h.days || []).map(d => DKR[d]).join(' ')}</span>
-        <button class="act-btn" data-hdel="${h.id}">🗑️</button>
+        <span style="font-size:11px;color:#94a3b8">${(h.days || []).map(d => DKR[d]).join(' ')}</span>
+        <button class="act-btn" data-hdel="${h.id}">${SVG_TRASH}</button>
       </div>
     </div>`).join('')
   }</div></div>` : '';

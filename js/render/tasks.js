@@ -7,9 +7,13 @@ import { openModal, closeModal } from '../main.js';
 let curFilter = 'all';
 let editTaskId = null;
 
-const TI = { assignment:'📝', exam:'📖', project:'💡', video:'🎬', other:'📌' };
-const PC = { high:'badge-red', medium:'badge-yellow', low:'badge-green' };
-const PL = { high:'높음', medium:'보통', low:'낮음' };
+const TL = { assignment:'과제', exam:'시험', project:'프로젝트', video:'강의영상', other:'기타' };
+const TC = { assignment:'type-assign', exam:'type-exam', project:'type-proj', video:'type-video', other:'type-other' };
+const PRD = { high:'prio-dot prio-high', medium:'prio-dot prio-med', low:'prio-dot prio-low' };
+const PRL = { high:'높음', medium:'보통', low:'낮음' };
+
+const SVG_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`;
+const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`;
 
 export function setFilter(btn, f) {
   curFilter = f;
@@ -34,29 +38,30 @@ export function renderTasks() {
     const dl = daysLeft(t.due);
     const urgency = taskUrgency(t, cfg);
     const URG_BADGE = {
-      overdue: `<span class="badge badge-red">💀 마감 지남</span>`,
-      today:   `<span class="badge badge-red">🔴 오늘 마감!</span>`,
-      warning: `<span class="badge badge-orange">🟠 ${dl}일 남음</span>`,
-      soon:    `<span class="badge badge-yellow">🟡 ${dl}일 남음</span>`,
-      ok:      `<span class="badge badge-green">🟢 ${dl}일 남음</span>`,
+      overdue: `<span class="badge badge-red">마감 지남</span>`,
+      today:   `<span class="badge badge-red">오늘 마감</span>`,
+      warning: `<span class="badge badge-orange">${dl}일 남음</span>`,
+      soon:    `<span class="badge badge-yellow">${dl}일 남음</span>`,
+      ok:      `<span class="badge badge-green">${dl}일 남음</span>`,
     };
     const urg = t.done ? '' : (URG_BADGE[urgency] || '');
     return `<div class="task-card${t.done ? ' done' : ''}">
       <button class="task-check${t.done ? ' chk' : ''}" data-tid="${t.id}">✓</button>
       <div class="task-body">
         <div style="display:flex;justify-content:space-between;gap:8px">
-          <div class="task-title${t.done ? ' crossed' : ''}">${TI[t.type] || '📌'} ${esc(t.title)}</div>
+          <div class="task-title${t.done ? ' crossed' : ''}">${esc(t.title)}</div>
           <div class="task-actions">
-            <button class="act-btn" data-edit="${t.id}">✏️</button>
-            <button class="act-btn" data-del="${t.id}">🗑️</button>
+            <button class="act-btn" data-edit="${t.id}">${SVG_EDIT}</button>
+            <button class="act-btn" data-del="${t.id}">${SVG_TRASH}</button>
           </div>
         </div>
         <div class="task-meta">
-          ${t.subject ? `<span style="font-size:.72rem;color:#94a3b8">${esc(t.subject)}</span>` : ''}
-          <span class="badge ${PC[t.priority] || 'badge-gray'}">${PL[t.priority] || t.priority}</span>
+          <span class="type-pill ${TC[t.type] || 'type-other'}">${TL[t.type] || t.type}</span>
+          ${t.subject ? `<span style="font-size:11px;color:#94a3b8">${esc(t.subject)}</span>` : ''}
+          <span class="${PRD[t.priority] || 'prio-dot'}">${PRL[t.priority] || t.priority}</span>
           ${urg}
         </div>
-        <div class="task-date">📅 ${fmtDate(t.due)}</div>
+        <div class="task-date">${fmtDate(t.due)}</div>
         ${t.notes ? `<div class="task-note">${esc(t.notes)}</div>` : ''}
       </div>
     </div>`;
