@@ -1,0 +1,17 @@
+{
+  "name": "Folio",
+  "short_name": "Folio",
+  "description": "나의 플래너",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5ede4",
+  "theme_color": "#8a4f35",
+  "icons": [
+    {
+      "src": "folio.jpg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
