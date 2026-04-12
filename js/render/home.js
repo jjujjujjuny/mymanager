@@ -17,7 +17,7 @@ export function renderHome() {
   document.getElementById('st-urgent').textContent = urgent.length;
 
   const uel = document.getElementById('home-urgent');
-  uel.innerHTML = deadlineSorted.length ? deadlineSorted.slice(0, 5).map(t => {
+  uel.innerHTML = deadlineSorted.length ? deadlineSorted.map(t => {
     const dl = daysLeft(t.due);
     const b = dl < 0
       ? '<span class="badge badge-red">지남</span>'
