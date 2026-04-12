@@ -11,12 +11,13 @@ export function renderHome() {
   const pending = tasks.filter(t => !t.done);
   const in3 = new Date(); in3.setDate(in3.getDate() + 3); in3.setHours(23, 59, 59);
   const urgent = pending.filter(t => parseDate(t.due) <= in3).sort((a, b) => a.due > b.due ? 1 : -1);
+  const deadlineSorted = pending.filter(t => t.due).sort((a, b) => a.due > b.due ? 1 : -1);
 
   document.getElementById('st-tasks').textContent = pending.length;
   document.getElementById('st-urgent').textContent = urgent.length;
 
   const uel = document.getElementById('home-urgent');
-  uel.innerHTML = urgent.length ? urgent.slice(0, 3).map(t => {
+  uel.innerHTML = deadlineSorted.length ? deadlineSorted.slice(0, 5).map(t => {
     const dl = daysLeft(t.due);
     const b = dl < 0
       ? '<span class="badge badge-red">지남</span>'
@@ -30,7 +31,7 @@ export function renderHome() {
         <div class="row-sub">${esc(t.subject || '과목 미입력')}</div>
       </div>${b}
     </div>`;
-  }).join('') : '<div class="empty">곧 마감인 항목이 없습니다</div>';
+  }).join('') : '<div class="empty">마감 예정 과제가 없습니다</div>';
 
   // 오늘 일정 (수업 + 이벤트)
   const evts = store.get('events').filter(e => dateStr(e.date) === ts);
@@ -94,7 +95,7 @@ export function idiomDone() {
 // 홈 이벤트 위임 (동적 버튼 처리)
 document.getElementById('home-urgent').addEventListener('click', e => {
   const btn = e.target.closest('[data-qid]');
-  if (btn) { toggleTask(btn.dataset.qid); }
+  if (btn) { toggleTask(btn.dataset.qid); renderTasks(); renderHome(); }
 });
 document.getElementById('home-habits').addEventListener('click', async e => {
   const btn = e.target.closest('[data-qhid]');
