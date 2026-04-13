@@ -1,6 +1,6 @@
 import { store } from '../store.js';
 import { api } from '../api.js';
-import { todayStr, fmtDate, esc } from '../utils.js';
+import { todayStr, fmtDate, dateStr, esc } from '../utils.js';
 import { openModal, closeModal } from '../main.js';
 
 let editPlanId = null;
@@ -31,7 +31,7 @@ export function renderStudyPlan() {
   // 날짜별 그룹핑
   const groups = {};
   plans.forEach(p => {
-    const d = String(p.date).slice(0, 10);
+    const d = dateStr(p.date);
     if (!groups[d]) groups[d] = [];
     groups[d].push(p);
   });
@@ -88,7 +88,7 @@ export function openStudyPlanModal(date, editId) {
   editPlanId = editId || null;
   const plan = editId ? store.get('study_plans').find(p => p.id === editId) : null;
 
-  document.getElementById('sp-date').value    = plan ? String(plan.date).slice(0, 10) : (date || todayStr());
+  document.getElementById('sp-date').value    = plan ? dateStr(plan.date) : (date || todayStr());
   document.getElementById('sp-subject').value = plan ? (plan.subject || '') : '';
   document.getElementById('sp-content').value = plan ? (plan.content || '') : '';
   document.getElementById('sp-duration').value = plan ? (plan.duration || '') : '';
