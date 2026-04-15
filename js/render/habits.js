@@ -15,7 +15,7 @@ export function renderHabits() {
   const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`;
   const tel = document.getElementById('habits-today');
   tel.innerHTML = todayH.length ? todayH.map(h => {
-    const done = logs.some(l => l.hid === h.id && l.date === ts);
+    const done = logs.some(l => l.hid === h.id && dateStr(l.date) === ts);
     return `<div class="habit-row">
       <button class="habit-check${done ? ' done-chk' : ''}" data-hid="${h.id}">✓</button>
       <div style="flex:1;min-width:0">
@@ -40,10 +40,10 @@ export function renderHabits() {
 }
 
 // 이벤트 위임
-document.getElementById('habits-today').addEventListener('click', async e => {
+document.getElementById('habits-today').addEventListener('click', e => {
   const hid = e.target.closest('[data-hid]')?.dataset.hid;
   const did = e.target.closest('[data-hdel]')?.dataset.hdel;
-  if (hid) { await toggleHabitLog(hid); renderHabits(); renderHome(); }
+  if (hid) { toggleHabitLog(hid); renderHabits(); renderHome(); }
   if (did) delHabit(did);
 });
 document.getElementById('habits-all').addEventListener('click', e => {
@@ -51,18 +51,20 @@ document.getElementById('habits-all').addEventListener('click', e => {
   if (did) delHabit(did);
 });
 
-export async function toggleHabitLog(id) {
+export function toggleHabitLog(id) {
   const logs = store.get('habit_logs'), ts = todayStr();
   const i = logs.findIndex(l => l.hid === id && dateStr(l.date) === ts);
   if (i > -1) {
     const removed = logs.splice(i, 1)[0];
     store.set('habit_logs', logs);
-    if (removed.id) await api.remove('habit_logs', removed.id);
-    else await api.removeHabitLog(id, ts);
+    // 백그라운드로 GAS에 삭제 요청 (UI는 이미 즉시 반영)
+    if (removed.id) api.remove('habit_logs', removed.id);
+    else api.removeHabitLog(id, ts);
   } else {
     const item = { id: crypto.randomUUID(), hid: id, date: ts };
     store.set('habit_logs', [...logs, item]);
-    await api.upsert('habit_logs', item);
+    // 백그라운드로 GAS에 저장 요청 (UI는 이미 즉시 반영)
+    api.upsert('habit_logs', item);
   }
 }
 

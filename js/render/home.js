@@ -1,5 +1,5 @@
 import { store } from '../store.js';
-import { todayStr, todayDayKey, parseDate, daysLeft, dateStr, esc, taskUrgency } from '../utils.js';
+import { todayStr, todayDayKey, parseDate, daysLeft, hoursLeft, dateStr, esc, taskUrgency } from '../utils.js';
 import { getTodayIdiom, isIdiomDoneToday, markIdiomDone } from '../idioms.js';
 import { toggleHabitLog } from './habits.js';
 import { toggleTask } from './tasks.js';
@@ -21,7 +21,7 @@ export function renderHome() {
     const dl = daysLeft(t.due);
     const b = dl < 0
       ? '<span class="badge badge-red">지남</span>'
-      : dl === 0 ? '<span class="badge badge-red">오늘</span>'
+      : dl === 0 ? `<span class="badge badge-red">${hoursLeft(t.due)}시간</span>`
       : dl === 1 ? '<span class="badge badge-orange">내일</span>'
       : `<span class="badge badge-yellow">${dl}일</span>`;
     return `<div class="row">
@@ -50,13 +50,13 @@ export function renderHome() {
   // 오늘 습관
   const habits = store.get('habits'), logs = store.get('habit_logs'), dk = todayDayKey();
   const todayH = habits.filter(h => Array.isArray(h.days) && h.days.includes(dk));
-  const doneH = todayH.filter(h => logs.some(l => l.hid === h.id && l.date === ts));
+  const doneH = todayH.filter(h => logs.some(l => l.hid === h.id && dateStr(l.date) === ts));
   const pct = todayH.length ? Math.round(doneH.length / todayH.length * 100) : 0;
   document.getElementById('st-habit').textContent = pct + '%';
 
   const hel = document.getElementById('home-habits');
   hel.innerHTML = todayH.length ? todayH.map(h => {
-    const done = logs.some(l => l.hid === h.id && l.date === ts);
+    const done = logs.some(l => l.hid === h.id && dateStr(l.date) === ts);
     return `<div class="row">
       <button class="habit-check${done ? ' done-chk' : ''}" data-qhid="${h.id}">✓</button>
       <span style="font-size:13px;font-weight:500;${done ? 'text-decoration:line-through;color:#94a3b8' : 'color:#0f172a'}">${esc(h.name)}</span>
@@ -97,9 +97,9 @@ document.getElementById('home-urgent').addEventListener('click', e => {
   const btn = e.target.closest('[data-qid]');
   if (btn) { toggleTask(btn.dataset.qid); renderTasks(); renderHome(); }
 });
-document.getElementById('home-habits').addEventListener('click', async e => {
+document.getElementById('home-habits').addEventListener('click', e => {
   const btn = e.target.closest('[data-qhid]');
-  if (btn) { await toggleHabitLog(btn.dataset.qhid); renderHabits(); renderHome(); }
+  if (btn) { toggleHabitLog(btn.dataset.qhid); renderHabits(); renderHome(); }
 });
 
 export function updateCharMsg() {
@@ -109,7 +109,7 @@ export function updateCharMsg() {
   const ts = todayStr();
   const habits = store.get('habits'), logs = store.get('habit_logs'), dk = todayDayKey();
   const todayH = habits.filter(h => Array.isArray(h.days) && h.days.includes(dk));
-  const doneH = todayH.filter(h => logs.some(l => l.hid === h.id && l.date === ts));
+  const doneH = todayH.filter(h => logs.some(l => l.hid === h.id && dateStr(l.date) === ts));
   const nm = cfg.name ? cfg.name + '야, ' : '';
   const hi = hr < 12 ? `${nm}좋은 아침~` : hr < 18 ? `${nm}안녕` : hr < 22 ? `${nm}저녁이네` : `${nm}늦었는데`;
 

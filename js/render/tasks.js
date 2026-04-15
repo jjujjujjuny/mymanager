@@ -1,6 +1,6 @@
 import { store } from '../store.js';
 import { api } from '../api.js';
-import { todayStr, daysLeft, fmtDate, esc, taskUrgency } from '../utils.js';
+import { todayStr, daysLeft, hoursLeft, fmtDate, esc, taskUrgency } from '../utils.js';
 import { renderHome } from './home.js';
 import { openModal, closeModal } from '../main.js';
 
@@ -39,7 +39,7 @@ export function renderTasks() {
     const urgency = taskUrgency(t, cfg);
     const URG_BADGE = {
       overdue: `<span class="badge badge-red">마감 지남</span>`,
-      today:   `<span class="badge badge-red">오늘 마감</span>`,
+      today:   `<span class="badge badge-red">${hoursLeft(t.due)}시간 남음</span>`,
       warning: `<span class="badge badge-orange">${dl}일 남음</span>`,
       soon:    `<span class="badge badge-yellow">${dl}일 남음</span>`,
       ok:      `<span class="badge badge-green">${dl}일 남음</span>`,

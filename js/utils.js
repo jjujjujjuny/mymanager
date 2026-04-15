@@ -31,6 +31,13 @@ export function daysLeft(ds) {
   return Math.round((due - t) / 864e5);
 }
 
+export function hoursLeft(ds) {
+  const endOfDay = parseDate(ds);
+  if (isNaN(endOfDay)) return 0;
+  endOfDay.setHours(23, 59, 59, 999);
+  return Math.max(0, Math.ceil((endOfDay - new Date()) / 3600000));
+}
+
 export function fmtDate(ds) {
   const d = parseDate(ds);
   return `${d.getMonth() + 1}/${d.getDate()} (${['일','월','화','수','목','금','토'][d.getDay()]})`;

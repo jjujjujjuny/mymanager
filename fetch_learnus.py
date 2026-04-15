@@ -31,9 +31,11 @@ def make_id(course, name, due):
     return "ln_" + hashlib.md5(f"{course}|{name}|{due}".encode()).hexdigest()[:12]
 
 def make_task(course, title, task_type, due_date, notes="", done=False):
+    # ID 생성에는 고정값 사용 (due_date=None이어도 날마다 바뀌지 않도록)
+    id_due = due_date.isoformat() if due_date else "no-due"
     due_str = due_date.isoformat() if due_date else (TODAY + timedelta(days=7)).isoformat()
     return {
-        "id":       make_id(course, title, due_str),
+        "id":       "ln_" + hashlib.md5(f"{course}|{title}|{id_due}".encode()).hexdigest()[:12],
         "title":    title,
         "subject":  course,
         "type":     task_type,
@@ -49,10 +51,18 @@ def parse_date(text):
     if not text: return None
     text = str(text).strip()
 
-    # YYYY-MM-DD HH:MM:SS 또는 YYYY-MM-DD HH:MM
-    m = re.search(r"(\d{4})-(\d{2})-(\d{2})", text)
+    # YYYY-MM-DD HH:MM:SS 또는 YYYY-MM-DD HH:MM (시간 포함)
+    m = re.search(r"(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}))?", text)
     if m:
-        try: return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3))).date()
+        try:
+            year, month, day = int(m.group(1)), int(m.group(2)), int(m.group(3))
+            hour   = int(m.group(4)) if m.group(4) else 12  # 시간 없으면 정오로 간주
+            minute = int(m.group(5)) if m.group(5) else 0
+            d = datetime(year, month, day)
+            # 자정(00:00) 마감은 사실상 전날 끝 → 하루 빼기
+            if hour == 0 and minute == 0:
+                d -= timedelta(days=1)
+            return d.date()
         except: pass
 
     # MM/DD 또는 M/D
@@ -63,12 +73,18 @@ def parse_date(text):
         try: return datetime(year, month, day).date()
         except: pass
 
-    # N월 N일
-    m = re.search(r"(\d{1,2})월\s*(\d{1,2})일", text)
+    # N월 N일 [N시 N분] 형식
+    m = re.search(r"(\d{1,2})월\s*(\d{1,2})일(?:\s*.*?(\d{1,2})시(?:\s*(\d{1,2})분)?)?", text)
     if m:
         month, day = int(m.group(1)), int(m.group(2))
+        hour   = int(m.group(3)) if m.group(3) else 12
+        minute = int(m.group(4)) if m.group(4) else 0
         year = TODAY.year if (month, day) >= (TODAY.month, TODAY.day) else TODAY.year + 1
-        try: return datetime(year, month, day).date()
+        try:
+            d = datetime(year, month, day)
+            if hour == 0 and minute == 0:
+                d -= timedelta(days=1)
+            return d.date()
         except: pass
 
     return None
@@ -231,9 +247,7 @@ def scrape_assignments(page, course_name):
             href = link_el.get_attribute("href")
             if not name or not href: continue
 
-            # 완료 여부 (체크박스)
-            done = is_completed(row)
-            if done: continue
+            # 완료 여부는 상세 페이지의 submission status로만 판별 (is_completed 오탐 방지)
 
             # 과제 상세 페이지 방문
             page.goto(href, wait_until="networkidle", timeout=15000)
@@ -259,7 +273,7 @@ def scrape_assignments(page, course_name):
             # 본문에서 "Due date: ..." 형식도 시도
             if not due_date:
                 body_text = page.inner_text("body")
-                m = re.search(r"[Dd]ue\s*[Dd]ate[:\s]+(.{5,30})", body_text)
+                m = re.search(r"[Dd]ue\s*[Dd]ate[:\s]+(.{5,60})", body_text)
                 if m: due_date = parse_date(m.group(1))
 
             # 상세 페이지에서도 못 찾으면 과제 이름에서 파싱 (예: "마감 5월 13일")
@@ -415,6 +429,17 @@ def main():
     if not all_tasks:
         print("\n  ℹ️  수집된 미완료 항목 없음")
         sys.exit(0)
+
+    # 동일 ID 중복 제거 (같은 과목+제목+마감일 조합)
+    seen_ids = set()
+    deduped = []
+    for t in all_tasks:
+        if t["id"] not in seen_ids:
+            seen_ids.add(t["id"])
+            deduped.append(t)
+    if len(deduped) < len(all_tasks):
+        print(f"  🔧 중복 제거: {len(all_tasks) - len(deduped)}개")
+    all_tasks = deduped
 
     all_tasks.sort(key=lambda t: t["due"])
     print("\n" + "-" * 52)
