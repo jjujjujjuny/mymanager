@@ -86,7 +86,7 @@
     </div>
     <div class="card">
       <div class="card-hdr">
-        <h2>긴급 마감</h2>
+        <h2>할 일</h2>
         <a class="link-sm" onclick="switchTab('tasks')">전체보기 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
       </div>
       <div class="card-body" id="home-urgent"></div>
@@ -106,19 +106,26 @@
       <div class="card-body" id="home-habits"></div>
     </div>
     <div class="card" id="idiom-card">
-      <div class="card-hdr"><h2>오늘의 영어 숙어</h2></div>
+      <div class="card-hdr">
+        <h2>오늘의 영어 표현</h2>
+        <span id="idiom-day-label" class="idiom-day-label">오늘</span>
+      </div>
       <div class="card-body">
-        <div id="idiom-body">
-          <div class="idiom-en" id="idiom-en"></div>
-          <div id="idiom-reveal" style="display:none">
-            <div class="idiom-kr" id="idiom-kr"></div>
-            <div class="idiom-ex" id="idiom-ex"></div>
+        <div class="idiom-slider">
+          <button class="idiom-nav-btn" onclick="idiomNav(-1)" aria-label="이전 표현">&#8249;</button>
+          <div id="idiom-body">
+            <div class="idiom-en" id="idiom-en"></div>
+            <div id="idiom-reveal" style="display:none">
+              <div class="idiom-kr" id="idiom-kr"></div>
+              <div class="idiom-ex" id="idiom-ex"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+              <button class="btn-secondary" id="idiom-show-btn" onclick="idiomReveal()">뜻 보기</button>
+              <button class="btn-primary"   id="idiom-done-btn" onclick="idiomDone()" style="display:none">외웠어!</button>
+            </div>
+            <div id="idiom-checked" style="display:none;color:#10b981;font-size:.8rem;font-weight:600;margin-top:10px">✓ 오늘 표현 완료</div>
           </div>
-          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-            <button class="btn-secondary" id="idiom-show-btn" onclick="idiomReveal()">뜻 보기</button>
-            <button class="btn-primary"   id="idiom-done-btn" onclick="idiomDone()" style="display:none">외웠어!</button>
-          </div>
-          <div id="idiom-checked" style="display:none;color:#10b981;font-size:.8rem;font-weight:600;margin-top:10px">오늘 숙어 완료</div>
+          <button class="idiom-nav-btn" onclick="idiomNav(1)" aria-label="다음 표현">&#8250;</button>
         </div>
       </div>
     </div>

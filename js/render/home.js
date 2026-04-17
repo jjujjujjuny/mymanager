@@ -1,6 +1,6 @@
 import { store } from '../store.js';
 import { todayStr, todayDayKey, parseDate, daysLeft, hoursLeft, dateStr, esc, taskUrgency } from '../utils.js';
-import { getTodayIdiom, isIdiomDoneToday, markIdiomDone } from '../idioms.js';
+import { getIdiomAt, isIdiomDoneToday, markIdiomDone } from '../idioms.js';
 import { toggleHabitLog } from './habits.js';
 import { toggleTask } from './tasks.js';
 import { renderHabits } from './habits.js';
@@ -67,17 +67,36 @@ export function renderHome() {
   updateCharMsg();
 }
 
+let idiomOffset = 0;
+
+function idiomDayLabel(offset) {
+  if (offset === 0) return '오늘';
+  if (offset === -1) return '어제';
+  if (offset === 1) return '내일';
+  return offset > 0 ? `+${offset}일 후` : `${Math.abs(offset)}일 전`;
+}
+
 export function renderIdiom() {
-  const idiom = getTodayIdiom();
+  const idiom = getIdiomAt(idiomOffset);
   document.getElementById('idiom-en').textContent = idiom.en;
   document.getElementById('idiom-kr').textContent = idiom.kr;
   document.getElementById('idiom-ex').textContent = '"' + idiom.ex + '"';
+  document.getElementById('idiom-day-label').textContent = idiomDayLabel(idiomOffset);
 
-  const done = isIdiomDoneToday();
-  document.getElementById('idiom-reveal').style.display  = done ? '' : 'none';
-  document.getElementById('idiom-show-btn').style.display = done ? 'none' : '';
-  document.getElementById('idiom-done-btn').style.display = done ? 'none' : 'none'; // 뜻 보기 후 표시
-  document.getElementById('idiom-checked').style.display = done ? '' : 'none';
+  const isToday = idiomOffset === 0;
+  if (isToday) {
+    const done = isIdiomDoneToday();
+    document.getElementById('idiom-reveal').style.display   = done ? '' : 'none';
+    document.getElementById('idiom-show-btn').style.display = done ? 'none' : '';
+    document.getElementById('idiom-done-btn').style.display = 'none';
+    document.getElementById('idiom-checked').style.display  = done ? '' : 'none';
+  } else {
+    // 오늘 외 날짜는 전부 공개
+    document.getElementById('idiom-reveal').style.display   = '';
+    document.getElementById('idiom-show-btn').style.display = 'none';
+    document.getElementById('idiom-done-btn').style.display = 'none';
+    document.getElementById('idiom-checked').style.display  = 'none';
+  }
 }
 
 export function idiomReveal() {
@@ -90,6 +109,11 @@ export function idiomDone() {
   markIdiomDone();
   renderIdiom();
   updateCharMsg();
+}
+
+export function idiomNav(dir) {
+  idiomOffset += dir;
+  renderIdiom();
 }
 
 // 홈 이벤트 위임 (동적 버튼 처리)
