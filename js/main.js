@@ -1,6 +1,6 @@
 import { store } from './store.js';
-import { loadAll } from './api.js';
-import { todayStr, AVATARS, esc } from './utils.js';
+import { loadAll, api } from './api.js';
+import { todayStr, AVATARS, esc, daysLeft } from './utils.js';
 import { renderHome, updateCharMsg, idiomReveal, idiomDone, idiomNav } from './render/home.js';
 import { renderTasks, setFilter, openTaskModal, saveTask } from './render/tasks.js';
 import { renderWeek, shiftWeek, openEventModal, saveEvent } from './render/schedule.js';
@@ -62,13 +62,13 @@ document.querySelectorAll('.modal-bg').forEach(m =>
 );
 
 // ===== 설정 =====
-let selAvatar = '🐱';
+let selAvatar = 'pika.webp';
 
 function openSettings() {
   const cfg = store.cfg();
   document.getElementById('s-name').value = cfg.name || '';
   document.getElementById('s-char').value = cfg.charName || '';
-  selAvatar = cfg.avatar || '🐱';
+  selAvatar = cfg.avatar || 'pika.webp';
   const lead = cfg.leadDays || {};
   document.getElementById('s-lead-video').value  = lead.video      ?? 2;
   document.getElementById('s-lead-assign').value = lead.assignment ?? 4;
@@ -79,7 +79,9 @@ function openSettings() {
 
 function buildAvatarGrid() {
   document.getElementById('avatar-grid').innerHTML = AVATARS.map(a =>
-    `<button type="button" class="pick-btn${a === selAvatar ? ' sel' : ''}" data-av="${a}">${a}</button>`
+    `<button type="button" class="pick-btn${a === selAvatar ? ' sel' : ''}" data-av="${a}">
+      <img src="pokemon/${a}" alt="${a.replace('.webp','')}" style="width:100%;height:100%;object-fit:contain">
+    </button>`
   ).join('');
 }
 
@@ -109,8 +111,9 @@ function saveSettings() {
 }
 
 function applySettings(cfg) {
-  const av = cfg.avatar || '🐱', nm = cfg.charName || '비서';
-  ['char-av','char-fab','cp-av'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = av; });
+  const av = cfg.avatar || 'pika.webp', nm = cfg.charName || '비서';
+  const imgHtml = `<img src="pokemon/${av}" alt="${av.replace('.webp','')}" style="width:100%;height:100%;object-fit:contain;display:block">`;
+  ['char-av','char-fab','cp-av'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = imgHtml; });
   document.getElementById('cp-name').textContent = nm;
 }
 
@@ -187,6 +190,30 @@ function closeChar() {
   document.getElementById('char-panel').style.display = 'none';
 }
 
+// ===== 오래된 완료 항목 자동 삭제 (마감 5일 이상 지난 것) =====
+async function autoCleanup() {
+  const THRESHOLD = -5;
+
+  const tasks = store.get('tasks');
+  const staleTasks = tasks.filter(t => t.done && daysLeft(t.due) < THRESHOLD);
+  if (staleTasks.length) {
+    store.set('tasks', tasks.filter(t => !staleTasks.includes(t)));
+    for (const t of staleTasks) await api.remove('tasks', t.id);
+  }
+
+  const plans = store.get('study_plans');
+  const stalePlans = plans.filter(p => p.done && daysLeft(p.date) < THRESHOLD);
+  if (stalePlans.length) {
+    store.set('study_plans', plans.filter(p => !stalePlans.includes(p)));
+    for (const p of stalePlans) await api.remove('study_plans', p.id);
+  }
+
+  if (staleTasks.length || stalePlans.length) {
+    console.log(`자동 삭제: 과제 ${staleTasks.length}개, 공부 플랜 ${stalePlans.length}개`);
+    renderAll();
+  }
+}
+
 // ===== 초기화 =====
 function init() {
   const now = new Date();
@@ -202,7 +229,7 @@ function init() {
 
   renderAll();
   // GAS 로드 완료 시 renderAll (api.js → main.js 순환 참조 방지)
-  window.addEventListener('gas-loaded', renderAll);
+  window.addEventListener('gas-loaded', () => { renderAll(); autoCleanup(); });
   loadAll();
   setInterval(loadAll, 180000); // 3분마다 자동 동기화
 }

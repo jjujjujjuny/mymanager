@@ -57,7 +57,7 @@ export function todayDayKey() {
 export const DAYS = ['mon','tue','wed','thu','fri','sat','sun'];
 export const DKR = { mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토', sun:'일' };
 export const ICONS = ['📚','🏃','💧','😴','🧘','✍️','🎵','💪','🍎','☕','📖','🎯','🖥️','🎨','🐾','🌱'];
-export const AVATARS = ['🐱','🐶','🦊','🐧','🦁','🐻','🐼','🐨','🦋','⭐','🌸','🔮','🐸','🐯','🦄','🌙'];
+export const AVATARS = ['pika.webp','charizard.webp','cyndaquil.webp','totodile.webp','breloom.webp','cubone.webp','dugtrio.webp','eve.webp','geodude.webp','ggobu.webp','golem.webp','hankari.webp','piri.webp','sandcastle.webp','todaeboogi.webp','tree.webp','weird.webp'];
 
 // ── 마감 알림 기본 시작 권장일 (유형별) ──────────────────────────────
 export const DEFAULT_LEAD = { video: 2, assignment: 4, exam: 7 };

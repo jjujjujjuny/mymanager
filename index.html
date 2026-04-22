@@ -73,7 +73,7 @@
   <!-- HOME -->
   <div id="page-home" class="tab-page show">
     <div class="grad-card">
-      <div class="avatar" id="char-av">🐱</div>
+      <div class="avatar" id="char-av"></div>
       <div>
         <div class="greeting" id="char-greeting">안녕</div>
         <div class="msg" id="char-msg">오늘도 화이팅</div>
@@ -231,7 +231,7 @@
   <div class="char-panel" id="char-panel" style="display:none">
     <div class="char-panel-hdr">
       <div class="char-panel-info">
-        <span id="cp-av" style="font-size:1.1rem">🐱</span>
+        <span id="cp-av" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"></span>
         <span class="char-panel-name" id="cp-name">비서</span>
       </div>
       <button class="char-close" onclick="closeChar()">
@@ -240,7 +240,7 @@
     </div>
     <div class="char-msgs" id="cp-msgs"></div>
   </div>
-  <button class="char-fab" id="char-fab" onclick="toggleChar()">🐱</button>
+  <button class="char-fab" id="char-fab" onclick="toggleChar()"></button>
 </div>
 
 <!-- ===== MODALS ===== -->
@@ -313,7 +313,7 @@
 <!-- Goal -->
 <div id="m-goal" class="modal-bg">
   <div class="modal">
-    <h3>목표 추가</h3>
+    <h3 id="m-goal-ttl">목표 추가</h3>
     <div class="form-group"><label class="form-label">목표</label><input id="g-title" class="inp" placeholder="이번 학기 학점 4.0 이상"></div>
     <div class="form-group"><label class="form-label">설명</label><textarea id="g-desc" class="inp" rows="2" placeholder="어떻게 달성할지"></textarea></div>
     <div class="form-group"><label class="form-label">목표 날짜</label><input id="g-dl" type="date" class="inp"></div>

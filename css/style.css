@@ -245,7 +245,8 @@ svg     { display: block; flex-shrink: 0; }
 }
 
 .grad-card .avatar {
-  font-size: 1.9rem; line-height: 1; flex-shrink: 0;
+  width: 54px; height: 54px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
 }
 
 .grad-card .greeting {
@@ -745,9 +746,10 @@ svg     { display: block; flex-shrink: 0; }
 .picker-grid { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-1); }
 
 .pick-btn {
-  width: 34px; height: 34px; border-radius: var(--r-xs);
-  font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: var(--r-xs);
+  padding: 4px; display: flex; align-items: center; justify-content: center;
   transition: background .15s; border: 1.5px solid transparent;
+  overflow: hidden;
 }
 .pick-btn:hover { background: var(--rule-light); }
 .pick-btn.sel   { background: var(--accent-bg); border-color: var(--accent-bd); }
