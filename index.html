@@ -16,13 +16,17 @@
 <!-- HEADER -->
 <header class="hdr">
   <div class="hdr-left">
-    <div class="hdr-monogram">HJ</div>
+    <div class="hdr-monogram"><img src="folio.png" alt="Folio" style="width:100%;height:100%;object-fit:contain;display:block"></div>
     <div>
       <div class="hdr-title">Folio</div>
       <div class="hdr-date" id="hdr-date"></div>
     </div>
   </div>
   <div class="hdr-btns">
+    <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="다크/라이트 모드">
+      <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    </button>
     <button class="icon-btn" onclick="loadAll()" title="동기화">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
     </button>
@@ -73,7 +77,7 @@
   <!-- HOME -->
   <div id="page-home" class="tab-page show">
     <div class="grad-card">
-      <div class="avatar" id="char-av"></div>
+      <div class="avatar" id="char-av" onclick="openSnakeGame()" style="cursor:pointer" title="🐍 클릭!"></div>
       <div>
         <div class="greeting" id="char-greeting">안녕</div>
         <div class="msg" id="char-msg">오늘도 화이팅</div>
@@ -389,6 +393,36 @@
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal('m-settings')">취소</button>
       <button class="btn-save"   onclick="saveSettings()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- SNAKE EASTER EGG -->
+<div id="m-snake" class="modal-bg">
+  <div class="modal snake-modal">
+    <div class="snake-hdr">
+      <span class="snake-title">🐍 스네이크</span>
+      <div class="snake-scores">
+        <span>점수 <strong id="snake-score">0</strong></span>
+        <span>최고 <strong id="snake-hi">0</strong></span>
+      </div>
+      <button class="act-btn" onclick="closeSnakeGame()">✕</button>
+    </div>
+    <div class="snake-wrap">
+      <canvas id="snake-canvas" width="320" height="320"></canvas>
+      <div id="snake-overlay" style="display:none">
+        <div class="snake-over-txt">GAME OVER</div>
+        <div class="snake-over-score">점수 <strong id="snake-final">0</strong> &nbsp;·&nbsp; 최고 <strong id="snake-over-hi">0</strong></div>
+        <button class="btn-primary" onclick="startSnake()">다시 시작</button>
+      </div>
+    </div>
+    <div class="snake-ctrl">
+      <button class="snake-btn" onclick="snakeMove('up')">▲</button>
+      <div style="display:flex;gap:8px">
+        <button class="snake-btn" onclick="snakeMove('left')">◄</button>
+        <button class="snake-btn" onclick="snakeMove('down')">▼</button>
+        <button class="snake-btn" onclick="snakeMove('right')">►</button>
+      </div>
     </div>
   </div>
 </div>

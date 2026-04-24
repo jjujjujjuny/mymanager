@@ -1,5 +1,6 @@
 import { store } from './store.js';
 import { loadAll, api } from './api.js';
+import { openSnakeGame, closeSnakeGame, startSnake, snakeMove } from './snake.js';
 import { todayStr, AVATARS, esc, daysLeft } from './utils.js';
 import { renderHome, updateCharMsg, idiomReveal, idiomDone, idiomNav } from './render/home.js';
 import { renderTasks, setFilter, openTaskModal, saveTask } from './render/tasks.js';
@@ -37,6 +38,11 @@ window.doExport       = doExport;
 window.toggleChar     = toggleChar;
 window.closeChar      = closeChar;
 window.loadAll        = loadAll;
+window.toggleTheme    = toggleTheme;
+window.openSnakeGame  = openSnakeGame;
+window.closeSnakeGame = closeSnakeGame;
+window.startSnake     = startSnake;
+window.snakeMove      = snakeMove;
 
 // ===== 렌더 전체 =====
 export function renderAll() {
@@ -113,7 +119,9 @@ function saveSettings() {
 function applySettings(cfg) {
   const av = cfg.avatar || 'pika.webp', nm = cfg.charName || '비서';
   const imgHtml = `<img src="pokemon/${av}" alt="${av.replace('.webp','')}" style="width:100%;height:100%;object-fit:contain;display:block">`;
-  ['char-av','char-fab','cp-av'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = imgHtml; });
+  const fabImgHtml = `<img src="pokemon/${av}" alt="${av.replace('.webp','')}" style="width:70%;height:70%;object-fit:contain;display:block">`;
+  ['char-av','cp-av'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = imgHtml; });
+  const fab = document.getElementById('char-fab'); if (fab) fab.innerHTML = fabImgHtml;
   document.getElementById('cp-name').textContent = nm;
 }
 
@@ -214,6 +222,27 @@ async function autoCleanup() {
   }
 }
 
+// ===== 다크 모드 =====
+function initTheme() {
+  const saved = localStorage.getItem('theme') || 'light';
+  applyTheme(saved);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const moon = document.getElementById('theme-icon-moon');
+  const sun  = document.getElementById('theme-icon-sun');
+  if (theme === 'dark') { moon.style.display = 'none'; sun.style.display = ''; }
+  else                  { moon.style.display = '';     sun.style.display = 'none'; }
+}
+
+export function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', next);
+  applyTheme(next);
+}
+
 // ===== 초기화 =====
 function init() {
   const now = new Date();
@@ -222,6 +251,8 @@ function init() {
   document.getElementById('habit-today-date').textContent = `${now.getMonth() + 1}월 ${now.getDate()}일`;
   document.getElementById('t-due').value = todayStr();
   document.getElementById('e-date').value = todayStr();
+
+  initTheme();
 
   const cfg = store.cfg();
   selAvatar = cfg.avatar || '🐱';

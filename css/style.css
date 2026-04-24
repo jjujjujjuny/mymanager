@@ -126,11 +126,10 @@ svg     { display: block; flex-shrink: 0; }
 
 .hdr-monogram {
   width: 28px; height: 28px;
-  background: var(--accent);
+  background: transparent;
   border-radius: var(--r-xs);
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Libre Baskerville', serif;
-  font-size: 10px; font-weight: 700; color: var(--sheet);
+  overflow: hidden;
   letter-spacing: .03em; flex-shrink: 0;
 }
 
@@ -984,3 +983,125 @@ textarea.inp { resize: none; line-height: 1.6; }
   flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .event-room { font-size: 10.5px; color: var(--ink-3); font-weight: 300; }
+
+/* ============================================================
+   DARK MODE
+   ============================================================ */
+
+body, .hdr, .tabs, .card, .modal, .char-panel, .task-card, .goal-card,
+.stat, .study-item, .inp, .tt-wrap {
+  transition: background .25s, border-color .25s, color .25s;
+}
+
+[data-theme="dark"] {
+  /* ── Ink ── */
+  --ink:    oklch(91% 0.012 70);
+  --ink-2:  oklch(72% 0.016 65);
+  --ink-3:  oklch(54% 0.012 64);
+  --ink-4:  oklch(38% 0.010 62);
+
+  /* ── Paper / Sheet ── */
+  --paper:  oklch(13% 0.016 55);
+  --sheet:  oklch(18% 0.020 55);
+
+  /* ── Rules ── */
+  --rule:       oklch(28% 0.022 56);
+  --rule-light: oklch(23% 0.016 56);
+
+  /* ── Accent ── */
+  --accent:    oklch(60% 0.130 48);
+  --accent-2:  oklch(54% 0.120 48);
+  --accent-bg: oklch(24% 0.042 50);
+  --accent-bd: oklch(38% 0.072 50);
+
+  /* ── Semantic ── */
+  --red-bg:    oklch(22% 0.050 22);
+  --red-tx:    oklch(72% 0.160 25);
+  --amber-bg:  oklch(22% 0.040 68);
+  --amber-tx:  oklch(78% 0.140 72);
+  --sage-bg:   oklch(22% 0.035 148);
+  --sage-tx:   oklch(68% 0.110 150);
+  --cobalt-bg: oklch(22% 0.038 250);
+  --cobalt-tx: oklch(70% 0.140 250);
+
+  /* ── Shadows ── */
+  --sh-xs: 0 1px 2px  oklch(0% 0 0 / .30);
+  --sh-sm: 0 2px 6px  oklch(0% 0 0 / .38), 0 1px 2px oklch(0% 0 0 / .24);
+  --sh-md: 0 4px 14px oklch(0% 0 0 / .45), 0 2px 4px oklch(0% 0 0 / .30);
+  --sh-lg: 0 8px 24px oklch(0% 0 0 / .50), 0 4px 8px oklch(0% 0 0 / .36);
+  --sh-xl: 0 20px 40px oklch(0% 0 0 / .60), 0 8px 16px oklch(0% 0 0 / .44);
+}
+
+[data-theme="dark"] .modal-bg {
+  background: oklch(8% 0.015 55 / .65);
+}
+
+[data-theme="dark"] .tt-cell.today-col {
+  background: oklch(24% 0.042 50 / .40);
+}
+
+/* ============================================================
+   SNAKE EASTER EGG
+   ============================================================ */
+
+.snake-modal {
+  padding: 0; max-width: 360px; overflow: hidden;
+}
+
+.snake-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--rule);
+}
+
+.snake-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 13px; font-weight: 700; color: var(--ink);
+}
+
+.snake-scores {
+  display: flex; gap: var(--sp-4);
+  font-size: 11px; color: var(--ink-3); font-family: 'Libre Baskerville', serif;
+}
+.snake-scores strong {
+  color: var(--accent); font-size: 13px;
+}
+
+.snake-wrap {
+  position: relative; line-height: 0;
+}
+#snake-canvas {
+  width: 100%; display: block;
+}
+
+#snake-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: var(--sp-3);
+  background: oklch(13% 0.016 55 / .85);
+}
+.snake-over-txt {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 22px; font-weight: 700; color: #fff; letter-spacing: .08em;
+}
+.snake-over-score {
+  font-size: 12px; color: rgba(255,255,255,.70);
+  font-family: 'Libre Baskerville', serif;
+}
+.snake-over-score strong { color: #fff; }
+
+.snake-ctrl {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--sp-1); padding: var(--sp-3);
+  border-top: 1px solid var(--rule);
+}
+.snake-btn {
+  width: 44px; height: 44px; border-radius: var(--r-sm);
+  background: var(--rule-light); color: var(--ink-2);
+  font-size: 14px; display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s; flex-shrink: 0;
+}
+.snake-btn:hover, .snake-btn:active {
+  background: var(--accent); color: var(--sheet);
+}

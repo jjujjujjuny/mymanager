@@ -6,8 +6,8 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbyXt07M-sfzG0_AN1nI9v61
 export function showSync(state, detail) {
   const el = document.getElementById('sync-bar');
   const cfg = {
-    loading: { text: '☁️ 동기화 중...', bg: '#6366f1', dur: 0 },
-    ok:      { text: '✅ 동기화 완료',   bg: '#10b981', dur: 1500 },
+    loading: { text: '☁️ 동기화 중...', bg: '#faedcf', dur: 0 },
+    ok:      { text: '✅ 동기화 완료',   bg: '#c76332', dur: 1500 },
     err:     { text: '⚠️ ' + (detail || '연결 실패'), bg: '#ef4444', dur: 5000 }
   }[state];
   if (!cfg) return;

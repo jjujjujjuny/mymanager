@@ -62,6 +62,17 @@ export const AVATARS = ['pika.webp','charizard.webp','cyndaquil.webp','totodile.
 // ── 마감 알림 기본 시작 권장일 (유형별) ──────────────────────────────
 export const DEFAULT_LEAD = { video: 2, assignment: 4, exam: 7 };
 
+// 시트 시간 필드 파싱 (1899년 ISO 문자열 → "HH:MM")
+export function fmtTime(val) {
+  if (!val) return '';
+  if (typeof val === 'string' && /^\d{2}:\d{2}$/.test(val)) return val;
+  const d = new Date(val);
+  if (!isNaN(d) && d.getFullYear() <= 1900) {
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+  return String(val);
+}
+
 /**
  * 과제 긴급도 계산
  * @returns 'overdue' | 'today' | 'warning' | 'soon' | 'ok' | 'done'

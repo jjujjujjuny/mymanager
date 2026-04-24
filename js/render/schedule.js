@@ -1,6 +1,6 @@
 import { store } from '../store.js';
 import { api } from '../api.js';
-import { todayStr, weekStart, dateStr, esc } from '../utils.js';
+import { todayStr, weekStart, dateStr, esc, fmtTime } from '../utils.js';
 import { renderHome } from './home.js';
 import { openModal, closeModal } from '../main.js';
 
@@ -39,7 +39,7 @@ export function shiftWeek(dir) {
 }
 
 function renderDayEvents() {
-  const events = store.get('events').filter(e => dateStr(e.date) === selDay).sort((a, b) => (a.start || '') > (b.start || '') ? 1 : -1);
+  const events = store.get('events').filter(e => dateStr(e.date) === selDay).sort((a, b) => fmtTime(a.start) > fmtTime(b.start) ? 1 : -1);
   const d = new Date(selDay + 'T00:00:00');
   const el = document.getElementById('day-events');
   const hdr = `<div style="font-size:.85rem;font-weight:600;color:#475569">${d.getMonth() + 1}월 ${d.getDate()}일 (${['일','월','화','수','목','금','토'][d.getDay()]}) 일정</div>`;
@@ -49,7 +49,7 @@ function renderDayEvents() {
         <div class="task-title">${esc(e.title)}</div>
         <button class="act-btn" data-edel="${e.id}">🗑️</button>
       </div>
-      ${e.start ? `<div class="task-date" style="color:#6366f1">${e.start}${e.end ? ' - ' + e.end : ''}</div>` : ''}
+      ${e.start ? `<div class="task-date" style="color:#6366f1">${fmtTime(e.start)}${e.end ? ' - ' + fmtTime(e.end) : ''}</div>` : ''}
       ${e.desc ? `<div class="task-note">${esc(e.desc)}</div>` : ''}
     </div>
   </div>`).join('') : `<div class="card"><div class="card-body"><div class="empty">이 날 일정이 없어요</div></div></div>`);

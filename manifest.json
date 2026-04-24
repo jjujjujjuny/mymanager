@@ -9,9 +9,9 @@
   "theme_color": "#8a4f35",
   "icons": [
     {
-      "src": "folio.jpg",
+      "src": "folio.png",
       "sizes": "any",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

@@ -1,5 +1,5 @@
 import { store } from '../store.js';
-import { todayStr, todayDayKey, parseDate, daysLeft, hoursLeft, dateStr, esc, taskUrgency } from '../utils.js';
+import { todayStr, todayDayKey, parseDate, daysLeft, hoursLeft, dateStr, esc, taskUrgency, fmtTime } from '../utils.js';
 import { getIdiomAt, isIdiomDoneToday, markIdiomDone } from '../idioms.js';
 import { toggleHabitLog } from './habits.js';
 import { toggleTask } from './tasks.js';
@@ -40,7 +40,7 @@ export function renderHome() {
   const cls = store.get('classes').filter(c => c.day === todayDayKey2);
   const combined = [
     ...cls.map(c => ({ s: c.start || '', html: `<div class="event-item"><span class="event-time cls">${c.start || '?'}</span><span class="event-title">${esc(c.name)}</span><span class="event-room">${esc(c.room || '')}</span></div>` })),
-    ...evts.map(e => ({ s: e.start || '', html: `<div class="event-item"><span class="event-time${e.start ? '' : ' allday'}">${e.start || '종일'}</span><span class="event-title">${esc(e.title)}</span></div>` }))
+    ...evts.map(e => { const ts = fmtTime(e.start); return { s: ts, html: `<div class="event-item"><span class="event-time${ts ? '' : ' allday'}">${ts || '종일'}</span><span class="event-title">${esc(e.title)}</span></div>` }; })
   ].sort((a, b) => a.s > b.s ? 1 : a.s < b.s ? -1 : 0);
 
   document.getElementById('home-sched').innerHTML = combined.length
