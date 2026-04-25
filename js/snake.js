@@ -2,12 +2,12 @@
 //  스네이크 이스터에그
 // ============================================================
 
-const GRID = 16;
-const COLS = 20;
-const ROWS = 20;
+const GRID = 32;
+const COLS = 10;
+const ROWS = 10;
 const W = COLS * GRID;   // 320
 const H = ROWS * GRID;   // 320
-const SPEED = 7;         // 프레임 당 틱 (낮을수록 빠름)
+const SPEED = 9;         // 프레임 당 틱 (낮을수록 빠름)
 
 let rafId = null;
 let frameCount = 0;
@@ -168,6 +168,7 @@ document.addEventListener('touchend', e => {
   const dx = e.changedTouches[0].clientX - _tx;
   const dy = e.changedTouches[0].clientY - _ty;
   _tx = _ty = null;
+  if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return; // 탭(버튼 클릭) 무시
   if (Math.abs(dx) > Math.abs(dy)) snakeMove(dx > 0 ? 'right' : 'left');
   else snakeMove(dy > 0 ? 'down' : 'up');
 }, { passive: true });
