@@ -8,7 +8,9 @@ const _data = {
   habit_logs: [],
   goals: [],
   classes: [],
-  study_plans: []
+  study_plans: [],
+  ideas: [],
+  gratitude: []
 };
 
 export const store = {

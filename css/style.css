@@ -1041,11 +1041,11 @@ body, .hdr, .tabs, .card, .modal, .char-panel, .task-card, .goal-card,
 }
 
 /* ============================================================
-   SNAKE EASTER EGG
+   GAME EASTER EGG (스네이크 → 벽돌깨기)
    ============================================================ */
 
 .snake-modal {
-  padding: 0; max-width: 360px; overflow: hidden;
+  padding: 0; max-width: 390px; overflow: hidden;
 }
 
 .snake-hdr {
@@ -1104,4 +1104,45 @@ body, .hdr, .tabs, .card, .modal, .char-panel, .task-card, .goal-card,
 }
 .snake-btn:hover, .snake-btn:active {
   background: var(--accent); color: var(--sheet);
+}
+
+/* ===== NOTE CARDS (아이디어 & 마음수양) ===== */
+.note-card {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.note-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px oklch(0% 0 0 / .06);
+}
+.note-card.note-expanded {
+  border-color: var(--accent);
+  box-shadow: 0 2px 10px oklch(0% 0 0 / .08);
+}
+.note-card--grat.note-expanded {
+  border-color: oklch(62% 0.16 15);
+}
+.note-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+}
+.note-title {
+  font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.45; flex: 1;
+}
+.note-date {
+  font-size: 10px; color: var(--ink-3); margin-top: 4px; font-family: 'Libre Baskerville', serif;
+}
+.note-detail {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--rule);
+}
+.note-content {
+  font-size: 13px; color: var(--ink-2); line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+}
+.note-updated {
+  font-size: 10px; color: var(--ink-3); margin-top: var(--sp-2); font-style: italic;
 }

@@ -69,6 +69,14 @@
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
     목표
   </button>
+  <button class="tab-btn" data-tab="ideas" onclick="switchTab('ideas')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><path d="M9 21h6"/><path d="M9 17h6"/></svg>
+    아이디어
+  </button>
+  <button class="tab-btn" data-tab="gratitude" onclick="switchTab('gratitude')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    마음수양
+  </button>
 </nav>
 
 <!-- MAIN -->
@@ -77,7 +85,7 @@
   <!-- HOME -->
   <div id="page-home" class="tab-page show">
     <div class="grad-card">
-      <div class="avatar" id="char-av" onclick="openSnakeGame()" style="cursor:pointer" title="🐍 클릭!"></div>
+      <div class="avatar" id="char-av" onclick="openBrickGame()" style="cursor:pointer" title="🎮 클릭!"></div>
       <div>
         <div class="greeting" id="char-greeting">안녕</div>
         <div class="msg" id="char-msg">오늘도 화이팅</div>
@@ -226,6 +234,30 @@
       </button>
     </div>
     <div id="goals-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+
+  <!-- IDEAS -->
+  <div id="page-ideas" class="tab-page">
+    <div class="top-row">
+      <span class="sec-title">아이디어</span>
+      <button class="btn-primary" onclick="openIdeaModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+        기록
+      </button>
+    </div>
+    <div id="ideas-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+
+  <!-- GRATITUDE -->
+  <div id="page-gratitude" class="tab-page">
+    <div class="top-row">
+      <span class="sec-title">마음수양</span>
+      <button class="btn-primary" onclick="openGratitudeModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+        기록
+      </button>
+    </div>
+    <div id="gratitude-list" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
 
 </main>
@@ -397,33 +429,53 @@
   </div>
 </div>
 
-<!-- SNAKE EASTER EGG -->
-<div id="m-snake" class="modal-bg">
+<!-- Idea -->
+<div id="m-idea" class="modal-bg">
+  <div class="modal">
+    <h3 id="m-idea-ttl">아이디어 기록</h3>
+    <div class="form-group"><label class="form-label">제목</label><input id="idea-title" class="inp" placeholder="떠오른 생각 한 줄 요약"></div>
+    <div class="form-group"><label class="form-label">내용</label><textarea id="idea-content" class="inp" rows="6" placeholder="아이디어, 깨달음, 메모를 자유롭게 적어보세요."></textarea></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('m-idea')">취소</button>
+      <button class="btn-save"   onclick="saveIdea()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Gratitude -->
+<div id="m-grat" class="modal-bg">
+  <div class="modal">
+    <h3 id="m-grat-ttl">마음수양 기록</h3>
+    <div class="form-group"><label class="form-label">제목</label><input id="grat-title" class="inp" placeholder="YYYY-MM-DD 기록"></div>
+    <div class="form-group"><label class="form-label">내용</label><textarea id="grat-content" class="inp" rows="6" placeholder="오늘 감사한 일 3가지 또는 누군가를 위한 축복을 적어보세요."></textarea></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('m-grat')">취소</button>
+      <button class="btn-save"   onclick="saveGratitude()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- BRICK BREAKER EASTER EGG -->
+<div id="m-brick" class="modal-bg">
   <div class="modal snake-modal">
     <div class="snake-hdr">
-      <span class="snake-title">🐍 스네이크</span>
+      <span class="snake-title">🎮 벽돌깨기</span>
       <div class="snake-scores">
-        <span>점수 <strong id="snake-score">0</strong></span>
-        <span>최고 <strong id="snake-hi">0</strong></span>
+        <span>라운드 <strong id="brick-score">1</strong></span>
+        <span>공 <strong id="brick-balls">1</strong></span>
+        <span>최고 <strong id="brick-hi">0</strong></span>
       </div>
-      <button class="act-btn" onclick="closeSnakeGame()">✕</button>
+      <button class="act-btn" onclick="closeBrickGame()">✕</button>
     </div>
-    <div class="snake-wrap">
-      <canvas id="snake-canvas" width="320" height="320"></canvas>
-      <div id="snake-overlay" style="display:none">
+    <div class="snake-wrap" style="position:relative;line-height:0">
+      <canvas id="brick-canvas" width="360" height="500" style="width:100%;display:block;touch-action:none"></canvas>
+      <div id="brick-overlay" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:oklch(13% 0.016 55 / .85)">
         <div class="snake-over-txt">GAME OVER</div>
-        <div class="snake-over-score">점수 <strong id="snake-final">0</strong> &nbsp;·&nbsp; 최고 <strong id="snake-over-hi">0</strong></div>
-        <button class="btn-primary" onclick="startSnake()">다시 시작</button>
+        <div class="snake-over-score">라운드 <strong id="brick-final">0</strong></div>
+        <button class="btn-primary" onclick="startBrickGame()">다시 시작</button>
       </div>
     </div>
-    <div class="snake-ctrl">
-      <button class="snake-btn" onclick="snakeMove('up')">▲</button>
-      <div style="display:flex;gap:8px">
-        <button class="snake-btn" onclick="snakeMove('left')">◄</button>
-        <button class="snake-btn" onclick="snakeMove('down')">▼</button>
-        <button class="snake-btn" onclick="snakeMove('right')">►</button>
-      </div>
-    </div>
+    <div style="padding:8px 12px;font-size:11px;color:var(--ink-3);text-align:center">드래그로 조준 → 떼면 발사 &nbsp;·&nbsp; 🟢 = 공 추가</div>
   </div>
 </div>
 

@@ -1,6 +1,6 @@
 import { store } from './store.js';
 import { loadAll, api } from './api.js';
-import { openSnakeGame, closeSnakeGame, startSnake, snakeMove } from './snake.js';
+import { openBrickGame, closeBrickGame, startBrickGame } from './brick.js';
 import { todayStr, AVATARS, esc, daysLeft } from './utils.js';
 import { renderHome, updateCharMsg, idiomReveal, idiomDone, idiomNav } from './render/home.js';
 import { renderTasks, setFilter, openTaskModal, saveTask } from './render/tasks.js';
@@ -9,6 +9,8 @@ import { renderHabits, openHabitModal, saveHabit } from './render/habits.js';
 import { renderGoals, openGoalModal, saveGoal } from './render/goals.js';
 import { renderTimetable } from './render/timetable.js';
 import { renderStudyPlan, openStudyPlanModal, saveStudyPlan, toggleStudyDone, deleteStudyPlan } from './render/studyplan.js';
+import { renderIdeas, openIdeaModal, saveIdea, delIdea } from './render/ideas.js';
+import { renderGratitude, openGratitudeModal, saveGratitude, delGrat } from './render/gratitude.js';
 
 // ===== 전역 노출 (HTML onclick 속성에서 호출) =====
 window.switchTab      = switchTab;
@@ -39,14 +41,19 @@ window.toggleChar     = toggleChar;
 window.closeChar      = closeChar;
 window.loadAll        = loadAll;
 window.toggleTheme    = toggleTheme;
-window.openSnakeGame  = openSnakeGame;
-window.closeSnakeGame = closeSnakeGame;
-window.startSnake     = startSnake;
-window.snakeMove      = snakeMove;
+window.openBrickGame    = openBrickGame;
+window.closeBrickGame   = closeBrickGame;
+window.startBrickGame   = startBrickGame;
+window.openIdeaModal    = openIdeaModal;
+window.saveIdea         = saveIdea;
+window.delIdea          = delIdea;
+window.openGratitudeModal = openGratitudeModal;
+window.saveGratitude    = saveGratitude;
+window.delGrat          = delGrat;
 
 // ===== 렌더 전체 =====
 export function renderAll() {
-  renderHome(); renderTasks(); renderWeek(); renderHabits(); renderGoals(); renderTimetable(); renderStudyPlan();
+  renderHome(); renderTasks(); renderWeek(); renderHabits(); renderGoals(); renderTimetable(); renderStudyPlan(); renderIdeas(); renderGratitude();
 }
 
 // ===== 탭 전환 =====
@@ -141,7 +148,7 @@ async function doImport() {
 
   let added = 0;
   const allNew = [];
-  ['tasks','events','habits','habit_logs','goals','classes','study_plans'].forEach(k => {
+  ['tasks','events','habits','habit_logs','goals','classes','study_plans','ideas','gratitude'].forEach(k => {
     if (!Array.isArray(data[k])) return;
     const ex = store.get(k), ids = new Set(ex.map(x => x.id));
     const nw = data[k].filter(x => !ids.has(x.id));
@@ -173,7 +180,8 @@ function doExport() {
     tasks: store.get('tasks'), events: store.get('events'),
     habits: store.get('habits'), habit_logs: store.get('habit_logs'),
     goals: store.get('goals'), classes: store.get('classes'),
-    study_plans: store.get('study_plans')
+    study_plans: store.get('study_plans'),
+    ideas: store.get('ideas'), gratitude: store.get('gratitude')
   };
   const json = JSON.stringify(data, null, 2);
   navigator.clipboard.writeText(json).catch(() => {

@@ -26,7 +26,7 @@ export async function loadAll() {
     if (d.error) throw new Error(d.error);
 
     const prevLogs = store.get('habit_logs');
-    ['tasks','events','habits','habit_logs','goals','classes','study_plans'].forEach(k => {
+    ['tasks','events','habits','habit_logs','goals','classes','study_plans','ideas','gratitude'].forEach(k => {
       const gasData = d[k];
       if (!Array.isArray(gasData)) return;
       // GAS가 빈 배열을 반환해도 로컬에 데이터가 있으면 덮어쓰지 않음
