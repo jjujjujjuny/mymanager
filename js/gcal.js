@@ -1,4 +1,5 @@
 // Google Calendar API integration via Google Identity Services (GIS)
+const GCAL_CLIENT_ID = '329064543871-mgc2uhh8aeu9da186l661a4lv7lqnvf3.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 let tokenClient = null;
 let accessToken = null;
@@ -13,15 +14,6 @@ function loadStoredToken() {
   } catch { /* ignore */ }
 }
 
-export function getGcalClientId() {
-  return localStorage.getItem('gcal_client_id') || '';
-}
-
-export function setGcalClientId(id) {
-  if (id) localStorage.setItem('gcal_client_id', id);
-  else localStorage.removeItem('gcal_client_id');
-}
-
 export function isGcalAuthed() {
   return !!accessToken && Date.now() < tokenExpiry;
 }
@@ -32,10 +24,9 @@ export function initGcal() {
 }
 
 function tryInitTokenClient() {
-  const clientId = getGcalClientId();
-  if (!clientId || !window.google?.accounts?.oauth2) return false;
+  if (!window.google?.accounts?.oauth2) return false;
   tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
+    client_id: GCAL_CLIENT_ID,
     scope: SCOPES,
     callback: handleToken
   });
@@ -51,11 +42,6 @@ function handleToken(resp) {
 }
 
 export function gcalLogin() {
-  const clientId = getGcalClientId();
-  if (!clientId) {
-    alert('설정(⚙️)에서 Google Client ID를 먼저 입력해주세요.');
-    return;
-  }
   if (!window.google?.accounts?.oauth2) {
     alert('Google 라이브러리가 아직 로드되지 않았어요. 잠시 후 다시 시도해주세요.');
     return;

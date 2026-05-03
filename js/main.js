@@ -1,6 +1,6 @@
 import { store } from './store.js';
 import { loadAll, api } from './api.js';
-import { initGcal, gcalLogin, gcalLogout, getGcalClientId, setGcalClientId } from './gcal.js';
+import { initGcal, gcalLogin, gcalLogout } from './gcal.js';
 import { openBrickGame, closeBrickGame, startBrickGame } from './brick.js';
 import { todayStr, AVATARS, esc, daysLeft } from './utils.js';
 import { renderHome, updateCharMsg, idiomReveal, idiomDone, idiomNav } from './render/home.js';
@@ -89,7 +89,6 @@ function openSettings() {
   document.getElementById('s-lead-video').value  = lead.video      ?? 2;
   document.getElementById('s-lead-assign').value = lead.assignment ?? 4;
   document.getElementById('s-lead-exam').value   = lead.exam       ?? 7;
-  document.getElementById('s-gcal-client-id').value = getGcalClientId();
   buildAvatarGrid();
   openModal('m-settings');
 }
@@ -121,7 +120,6 @@ function saveSettings() {
       exam:       Math.max(1, parseInt(document.getElementById('s-lead-exam').value)   || 7),
     }
   };
-  setGcalClientId(document.getElementById('s-gcal-client-id').value.trim());
   store.saveCfg(cfg);
   applySettings(cfg);
   closeModal('m-settings');
