@@ -3,14 +3,32 @@ import { api } from '../api.js';
 import { todayStr, weekStart, dateStr, esc, fmtTime } from '../utils.js';
 import { renderHome } from './home.js';
 import { openModal, closeModal } from '../main.js';
+import { fetchGcalEvents, isGcalAuthed, gcalLogin } from '../gcal.js';
 
 let selDay = todayStr();
 let curWeekDate = weekStart(new Date());
+
+// 구글 캘린더 이벤트 캐시
+let gcalCache = [];
+let gcalFetchedWeekKey = null;
+
+// 구글 캘린더 인증 상태 변경 시 새로고침
+window.addEventListener('gcal-authed', () => {
+  gcalCache = [];
+  gcalFetchedWeekKey = null;
+  renderWeek();
+});
 
 export function renderWeek() {
   const start = new Date(curWeekDate), today = new Date(); today.setHours(0, 0, 0, 0);
   const end = new Date(start); end.setDate(end.getDate() + 6);
   document.getElementById('week-lbl').textContent = `${start.getMonth() + 1}월 ${start.getDate()}일 - ${end.getMonth() + 1}월 ${end.getDate()}일`;
+
+  const startStr = dateStr(start);
+  const endStr   = dateStr(end);
+  const weekKey  = startStr + '_' + endStr;
+
+  updateGcalBtn();
 
   const events = store.get('events');
   const dn = ['월','화','수','목','금','토','일'];
@@ -18,14 +36,28 @@ export function renderWeek() {
     const dt = new Date(start); dt.setDate(dt.getDate() + i);
     const ds = dateStr(dt);
     const isToday = dt.getTime() === today.getTime(), isSel = ds === selDay;
-    const cnt = events.filter(e => dateStr(e.date) === ds).length;
+    const localCnt = events.filter(e => dateStr(e.date) === ds).length;
+    const gcalCnt  = gcalCache.filter(e => e.date === ds).length;
+    const cnt = localCnt + gcalCnt;
     return `<div class="day-col${isSel ? ' sel' : ''}" data-ds="${ds}">
       <span class="day-name">${d}</span>
       <span class="day-num${isToday ? ' today' : isSel ? ' sel-num' : ''}">${dt.getDate()}</span>
       <span class="${cnt ? 'day-dot' : 'day-dot hidden'}"></span>
     </div>`;
   }).join('');
+
   renderDayEvents();
+
+  // 구글 캘린더 이벤트 비동기 로드 (주가 바뀌었을 때만)
+  if (isGcalAuthed() && gcalFetchedWeekKey !== weekKey) {
+    gcalFetchedWeekKey = weekKey;
+    fetchGcalEvents(startStr, endStr).then(events => {
+      if (events === null) return; // not authed
+      gcalCache = events;
+      // 주 격자 도트 업데이트
+      renderWeek();
+    });
+  }
 }
 
 document.getElementById('week-grid').addEventListener('click', e => {
@@ -39,20 +71,33 @@ export function shiftWeek(dir) {
 }
 
 function renderDayEvents() {
-  const events = store.get('events').filter(e => dateStr(e.date) === selDay).sort((a, b) => fmtTime(a.start) > fmtTime(b.start) ? 1 : -1);
+  const localEvents = store.get('events').filter(e => dateStr(e.date) === selDay);
+  const gcalEvents  = gcalCache.filter(e => e.date === selDay);
+  const all = [...localEvents, ...gcalEvents].sort((a, b) => {
+    const ta = fmtTime(a.start) || '00:00';
+    const tb = fmtTime(b.start) || '00:00';
+    return ta > tb ? 1 : -1;
+  });
+
   const d = new Date(selDay + 'T00:00:00');
   const el = document.getElementById('day-events');
   const hdr = `<div style="font-size:.85rem;font-weight:600;color:#475569">${d.getMonth() + 1}월 ${d.getDate()}일 (${['일','월','화','수','목','금','토'][d.getDay()]}) 일정</div>`;
-  el.innerHTML = hdr + (events.length ? events.map(e => `<div class="task-card">
-    <div class="task-body">
-      <div style="display:flex;justify-content:space-between">
-        <div class="task-title">${esc(e.title)}</div>
-        <button class="act-btn" data-edel="${e.id}">🗑️</button>
+  el.innerHTML = hdr + (all.length ? all.map(e => {
+    const isGcal = e.isGcal;
+    return `<div class="task-card${isGcal ? ' gcal-event' : ''}">
+      <div class="task-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
+          <div style="display:flex;align-items:center;gap:6px;min-width:0">
+            ${isGcal ? '<span class="gcal-badge">G</span>' : ''}
+            <div class="task-title">${esc(e.title)}</div>
+          </div>
+          ${!isGcal ? `<button class="act-btn" data-edel="${e.id}">🗑️</button>` : ''}
+        </div>
+        ${e.start ? `<div class="task-date" style="color:#6366f1">${fmtTime(e.start)}${e.end ? ' - ' + fmtTime(e.end) : ''}</div>` : ''}
+        ${e.desc ? `<div class="task-note">${esc(e.desc)}</div>` : ''}
       </div>
-      ${e.start ? `<div class="task-date" style="color:#6366f1">${fmtTime(e.start)}${e.end ? ' - ' + fmtTime(e.end) : ''}</div>` : ''}
-      ${e.desc ? `<div class="task-note">${esc(e.desc)}</div>` : ''}
-    </div>
-  </div>`).join('') : `<div class="card"><div class="card-body"><div class="empty">이 날 일정이 없어요</div></div></div>`);
+    </div>`;
+  }).join('') : `<div class="card"><div class="card-body"><div class="empty">이 날 일정이 없어요</div></div></div>`);
 }
 
 document.getElementById('day-events').addEventListener('click', e => {
@@ -90,4 +135,36 @@ function delEvent(id) {
   store.set('events', store.get('events').filter(e => e.id !== id));
   api.remove('events', id);
   renderWeek(); renderHome();
+}
+
+export function syncGcalWeek() {
+  const start = new Date(curWeekDate);
+  const end   = new Date(start); end.setDate(end.getDate() + 6);
+  const startStr = dateStr(start);
+  const endStr   = dateStr(end);
+  const weekKey  = startStr + '_' + endStr;
+
+  gcalFetchedWeekKey = null; // 강제 새로고침
+  gcalCache = [];
+  gcalFetchedWeekKey = weekKey;
+
+  fetchGcalEvents(startStr, endStr).then(events => {
+    if (events === null) return;
+    gcalCache = events;
+    renderWeek();
+  });
+}
+
+function updateGcalBtn() {
+  const btn = document.getElementById('gcal-sync-btn');
+  if (!btn) return;
+  if (isGcalAuthed()) {
+    btn.textContent = '🔄 캘린더';
+    btn.title = '구글 캘린더 새로고침';
+    btn.onclick = syncGcalWeek;
+  } else {
+    btn.textContent = '📅 구글 캘린더';
+    btn.title = '구글 캘린더 연동';
+    btn.onclick = gcalLogin;
+  }
 }

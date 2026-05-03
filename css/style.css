@@ -1146,3 +1146,12 @@ body, .hdr, .tabs, .card, .modal, .char-panel, .task-card, .goal-card,
 .note-updated {
   font-size: 10px; color: var(--ink-3); margin-top: var(--sp-2); font-style: italic;
 }
+
+/* Google Calendar 연동 */
+.gcal-event { border-left: 3px solid #4285f4; }
+.gcal-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 3px;
+  background: #4285f4; color: #fff;
+  font-size: 10px; font-weight: 700; flex-shrink: 0;
+}

@@ -1,5 +1,6 @@
 import { store } from './store.js';
 import { loadAll, api } from './api.js';
+import { initGcal, gcalLogin, gcalLogout, getGcalClientId, setGcalClientId } from './gcal.js';
 import { openBrickGame, closeBrickGame, startBrickGame } from './brick.js';
 import { todayStr, AVATARS, esc, daysLeft } from './utils.js';
 import { renderHome, updateCharMsg, idiomReveal, idiomDone, idiomNav } from './render/home.js';
@@ -44,6 +45,8 @@ window.toggleTheme    = toggleTheme;
 window.openBrickGame    = openBrickGame;
 window.closeBrickGame   = closeBrickGame;
 window.startBrickGame   = startBrickGame;
+window.gcalLogin        = gcalLogin;
+window.gcalLogout       = gcalLogout;
 window.openIdeaModal    = openIdeaModal;
 window.saveIdea         = saveIdea;
 window.delIdea          = delIdea;
@@ -86,6 +89,7 @@ function openSettings() {
   document.getElementById('s-lead-video').value  = lead.video      ?? 2;
   document.getElementById('s-lead-assign').value = lead.assignment ?? 4;
   document.getElementById('s-lead-exam').value   = lead.exam       ?? 7;
+  document.getElementById('s-gcal-client-id').value = getGcalClientId();
   buildAvatarGrid();
   openModal('m-settings');
 }
@@ -117,6 +121,7 @@ function saveSettings() {
       exam:       Math.max(1, parseInt(document.getElementById('s-lead-exam').value)   || 7),
     }
   };
+  setGcalClientId(document.getElementById('s-gcal-client-id').value.trim());
   store.saveCfg(cfg);
   applySettings(cfg);
   closeModal('m-settings');
@@ -261,6 +266,9 @@ function init() {
   document.getElementById('e-date').value = todayStr();
 
   initTheme();
+  // GIS 라이브러리 로드 후 초기화 (async defer이므로 약간의 지연 허용)
+  if (window.google?.accounts?.oauth2) initGcal();
+  else window.addEventListener('load', initGcal, { once: true });
 
   const cfg = store.cfg();
   selAvatar = cfg.avatar || '🐱';
