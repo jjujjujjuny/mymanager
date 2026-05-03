@@ -4,13 +4,18 @@ const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 let tokenClient = null;
 let accessToken = null;
 let tokenExpiry = 0;
+let everAuthed = false; // 한 번이라도 동의한 적 있는지
 
 function loadStoredToken() {
   try {
     const s = localStorage.getItem('gcal_token');
     if (!s) return;
     const { token, expiry } = JSON.parse(s);
-    if (Date.now() < expiry) { accessToken = token; tokenExpiry = expiry; }
+    if (Date.now() < expiry) {
+      accessToken = token;
+      tokenExpiry = expiry;
+    }
+    everAuthed = true; // 저장된 토큰이 있으면 과거에 동의한 것
   } catch { /* ignore */ }
 }
 
@@ -20,7 +25,19 @@ export function isGcalAuthed() {
 
 export function initGcal() {
   loadStoredToken();
-  tryInitTokenClient();
+  if (tryInitTokenClient()) {
+    // 이전에 동의했고 토큰이 만료됐으면 자동 silent re-auth 시도
+    if (everAuthed && !isGcalAuthed()) {
+      tokenClient.requestAccessToken({ prompt: '' });
+    }
+  } else {
+    // GIS 라이브러리가 아직 안 로드됐으면 로드 완료 후 재시도
+    window.addEventListener('google-identity-loaded', () => {
+      if (tryInitTokenClient() && everAuthed && !isGcalAuthed()) {
+        tokenClient.requestAccessToken({ prompt: '' });
+      }
+    }, { once: true });
+  }
 }
 
 function tryInitTokenClient() {
@@ -84,7 +101,12 @@ export async function fetchGcalEvents(startDateStr, endDateStr) {
       accessToken = null;
       tokenExpiry = 0;
       localStorage.removeItem('gcal_token');
-      window.dispatchEvent(new CustomEvent('gcal-authed'));
+      // 이전에 동의한 적 있으면 silent re-auth 시도
+      if (everAuthed && tokenClient) {
+        tokenClient.requestAccessToken({ prompt: '' });
+      } else {
+        window.dispatchEvent(new CustomEvent('gcal-authed'));
+      }
       return null;
     }
 
