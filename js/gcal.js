@@ -1,164 +1,24 @@
-// Google Calendar API integration via Google Identity Services (GIS)
-const GCAL_CLIENT_ID = '329064543871-mgc2uhh8aeu9da186l661a4lv7lqnvf3.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
-let tokenClient = null;
-let accessToken = null;
-let tokenExpiry = 0;
-let everAuthed = false; // 한 번이라도 동의한 적 있는지
-let refreshTimer = null;  // 만료 전 자동 갱신 타이머
-let isSilentAttempt = false; // 현재 시도가 백그라운드 silent re-auth인지
+// Google Calendar - GAS 프록시 방식 (클라이언트 OAuth 불필요)
+// GAS 스크립트가 계정 권한으로 직접 CalendarApp 호출
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwp08WWrqn1JTHbiXwoFDUkYYJyi6U_dKieoQEU7wz1utvtZi4K-WoR4gX_pnlzruTFWg/exec';
 
-function loadStoredToken() {
-  try {
-    const s = localStorage.getItem('gcal_token');
-    if (!s) return;
-    const { token, expiry } = JSON.parse(s);
-    if (Date.now() < expiry) {
-      accessToken = token;
-      tokenExpiry = expiry;
-    }
-    everAuthed = true; // 저장된 토큰이 있으면 과거에 동의한 것
-  } catch { /* ignore */ }
-}
-
-export function isGcalAuthed() {
-  return !!accessToken && Date.now() < tokenExpiry;
-}
-
-// 토큰 만료 5분 전에 자동으로 갱신 예약
-function scheduleRefresh() {
-  if (refreshTimer) clearTimeout(refreshTimer);
-  const msLeft = tokenExpiry - Date.now() - 5 * 60 * 1000;
-  if (msLeft > 0 && tokenClient) {
-    refreshTimer = setTimeout(() => {
-      isSilentAttempt = true;
-      tokenClient.requestAccessToken({ prompt: '' });
-    }, msLeft);
-  }
-}
-
-export function initGcal() {
-  loadStoredToken();
-  if (tryInitTokenClient()) {
-    if (everAuthed && !isGcalAuthed()) {
-      // 이전에 동의했고 토큰이 만료됐으면 자동 silent re-auth 시도
-      isSilentAttempt = true;
-      tokenClient.requestAccessToken({ prompt: '' });
-    } else if (isGcalAuthed()) {
-      scheduleRefresh();
-    }
-  } else {
-    // GIS 라이브러리가 아직 안 로드됐으면 로드 완료 후 재시도
-    window.addEventListener('google-identity-loaded', () => {
-      if (!tryInitTokenClient()) return;
-      if (everAuthed && !isGcalAuthed()) {
-        isSilentAttempt = true;
-        tokenClient.requestAccessToken({ prompt: '' });
-      } else if (isGcalAuthed()) {
-        scheduleRefresh();
-      }
-    }, { once: true });
-  }
-}
-
-function tryInitTokenClient() {
-  if (!window.google?.accounts?.oauth2) return false;
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GCAL_CLIENT_ID,
-    scope: SCOPES,
-    callback: handleToken
-  });
-  return true;
-}
-
-function handleToken(resp) {
-  isSilentAttempt = false;
-  if (resp.error) {
-    console.error('GCal auth error:', resp.error);
-    // silent re-auth 실패 시에도 UI 업데이트해서 로그인 버튼 표시
-    window.dispatchEvent(new CustomEvent('gcal-authed'));
-    return;
-  }
-  accessToken = resp.access_token;
-  tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
-  everAuthed = true;
-  localStorage.setItem('gcal_token', JSON.stringify({ token: accessToken, expiry: tokenExpiry }));
-  scheduleRefresh(); // 다음 만료 전 갱신 예약
-  window.dispatchEvent(new CustomEvent('gcal-authed'));
-}
-
-export function gcalLogin() {
-  if (!window.google?.accounts?.oauth2) {
-    alert('Google 라이브러리가 아직 로드되지 않았어요. 잠시 후 다시 시도해주세요.');
-    return;
-  }
-  if (!tokenClient) {
-    if (!tryInitTokenClient()) return;
-  }
-  isSilentAttempt = false;
-  // 이전에 동의한 적 있으면 consent 스킵 (만료 여부와 무관)
-  tokenClient.requestAccessToken({ prompt: everAuthed ? '' : 'consent' });
-}
-
-export function gcalLogout() {
-  if (refreshTimer) clearTimeout(refreshTimer);
-  if (accessToken && window.google?.accounts?.oauth2) {
-    google.accounts.oauth2.revoke(accessToken);
-  }
-  accessToken = null;
-  tokenExpiry = 0;
-  everAuthed = false;
-  localStorage.removeItem('gcal_token');
-  window.dispatchEvent(new CustomEvent('gcal-authed'));
-}
+export function isGcalAuthed() { return true; }
+export function initGcal() {}
+export function gcalLogin() {}
+export function gcalLogout() {}
 
 export async function fetchGcalEvents(startDateStr, endDateStr) {
-  if (!isGcalAuthed()) return null; // null = not authed
-
-  const timeMin = new Date(startDateStr + 'T00:00:00').toISOString();
-  const timeMax = new Date(endDateStr + 'T23:59:59').toISOString();
-
-  const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
-  url.searchParams.set('timeMin', timeMin);
-  url.searchParams.set('timeMax', timeMax);
-  url.searchParams.set('singleEvents', 'true');
-  url.searchParams.set('orderBy', 'startTime');
-  url.searchParams.set('maxResults', '100');
+  const start = new Date(startDateStr + 'T00:00:00').toISOString();
+  const end   = new Date(endDateStr   + 'T23:59:59').toISOString();
 
   try {
-    const r = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+    const r = await fetch(`${GAS_URL}?action=calEvents&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`, {
+      cache: 'no-store'
     });
-
-    if (r.status === 401) {
-      accessToken = null;
-      tokenExpiry = 0;
-      localStorage.removeItem('gcal_token');
-      if (everAuthed && tokenClient) {
-        isSilentAttempt = true;
-        tokenClient.requestAccessToken({ prompt: '' });
-      } else {
-        window.dispatchEvent(new CustomEvent('gcal-authed'));
-      }
-      return null;
-    }
-
     if (!r.ok) return [];
-
     const data = await r.json();
-    return (data.items || []).map(item => {
-      const startRaw = item.start.dateTime || item.start.date || '';
-      const endRaw   = item.end?.dateTime  || item.end?.date  || '';
-      return {
-        id:     'gcal_' + item.id,
-        title:  item.summary || '(제목 없음)',
-        date:   startRaw.substring(0, 10),
-        start:  item.start.dateTime ? startRaw.substring(11, 16) : '',
-        end:    item.end?.dateTime  ? endRaw.substring(11, 16)   : '',
-        desc:   item.description || '',
-        isGcal: true
-      };
-    });
+    if (data.error) { console.error('GCal GAS error:', data.error); return []; }
+    return data;
   } catch (e) {
     console.error('GCal fetch error:', e);
     return [];

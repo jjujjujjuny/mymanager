@@ -36,6 +36,24 @@ function doGet(e) {
       return jsonResponse(result);
     }
 
+    if (action === 'calEvents') {
+      const start = new Date(e.parameter.start);
+      const end   = new Date(e.parameter.end);
+      const tz    = Session.getScriptTimeZone();
+      const cal   = CalendarApp.getDefaultCalendar();
+      const events = cal.getEvents(start, end);
+      const result = events.map(ev => ({
+        id:     'gcal_' + ev.getId().replace(/@.*/, ''),
+        title:  ev.getTitle(),
+        date:   Utilities.formatDate(ev.getStartTime(), tz, 'yyyy-MM-dd'),
+        start:  ev.isAllDayEvent() ? '' : Utilities.formatDate(ev.getStartTime(), tz, 'HH:mm'),
+        end:    ev.isAllDayEvent() ? '' : Utilities.formatDate(ev.getEndTime(), tz, 'HH:mm'),
+        desc:   ev.getDescription() || '',
+        isGcal: true
+      }));
+      return jsonResponse(result);
+    }
+
     return jsonResponse({ error: 'Unknown action: ' + action });
   } catch (err) {
     return jsonResponse({ error: err.message });

@@ -3,7 +3,7 @@ import { api } from '../api.js';
 import { todayStr, weekStart, dateStr, esc, fmtTime } from '../utils.js';
 import { renderHome } from './home.js';
 import { openModal, closeModal } from '../main.js';
-import { fetchGcalEvents, isGcalAuthed, gcalLogin } from '../gcal.js';
+import { fetchGcalEvents } from '../gcal.js';
 
 let selDay = todayStr();
 let curWeekDate = weekStart(new Date());
@@ -11,13 +11,6 @@ let curWeekDate = weekStart(new Date());
 // 구글 캘린더 이벤트 캐시
 let gcalCache = [];
 let gcalFetchedWeekKey = null;
-
-// 구글 캘린더 인증 상태 변경 시 새로고침
-window.addEventListener('gcal-authed', () => {
-  gcalCache = [];
-  gcalFetchedWeekKey = null;
-  renderWeek();
-});
 
 export function renderWeek() {
   const start = new Date(curWeekDate), today = new Date(); today.setHours(0, 0, 0, 0);
@@ -49,12 +42,10 @@ export function renderWeek() {
   renderDayEvents();
 
   // 구글 캘린더 이벤트 비동기 로드 (주가 바뀌었을 때만)
-  if (isGcalAuthed() && gcalFetchedWeekKey !== weekKey) {
+  if (gcalFetchedWeekKey !== weekKey) {
     gcalFetchedWeekKey = weekKey;
     fetchGcalEvents(startStr, endStr).then(events => {
-      if (events === null) return; // not authed
       gcalCache = events;
-      // 주 격자 도트 업데이트
       renderWeek();
     });
   }
@@ -158,13 +149,7 @@ export function syncGcalWeek() {
 function updateGcalBtn() {
   const btn = document.getElementById('gcal-sync-btn');
   if (!btn) return;
-  if (isGcalAuthed()) {
-    btn.textContent = '🔄 캘린더';
-    btn.title = '구글 캘린더 새로고침';
-    btn.onclick = syncGcalWeek;
-  } else {
-    btn.textContent = '📅 구글 캘린더';
-    btn.title = '구글 캘린더 연동';
-    btn.onclick = gcalLogin;
-  }
+  btn.textContent = '🔄 캘린더';
+  btn.title = '구글 캘린더 새로고침';
+  btn.onclick = syncGcalWeek;
 }

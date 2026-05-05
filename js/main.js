@@ -1,6 +1,5 @@
 import { store } from './store.js';
 import { loadAll, api } from './api.js';
-import { initGcal, gcalLogin, gcalLogout } from './gcal.js';
 import { openBrickGame, closeBrickGame, startBrickGame } from './brick.js';
 import { todayStr, AVATARS, esc, daysLeft } from './utils.js';
 import { renderHome, updateCharMsg, idiomReveal, idiomDone, idiomNav } from './render/home.js';
@@ -45,8 +44,6 @@ window.toggleTheme    = toggleTheme;
 window.openBrickGame    = openBrickGame;
 window.closeBrickGame   = closeBrickGame;
 window.startBrickGame   = startBrickGame;
-window.gcalLogin        = gcalLogin;
-window.gcalLogout       = gcalLogout;
 window.openIdeaModal    = openIdeaModal;
 window.saveIdea         = saveIdea;
 window.delIdea          = delIdea;
@@ -264,9 +261,6 @@ function init() {
   document.getElementById('e-date').value = todayStr();
 
   initTheme();
-  // GIS 라이브러리 로드 후 초기화 (async defer이므로 약간의 지연 허용)
-  if (window.google?.accounts?.oauth2) initGcal();
-  else window.addEventListener('load', initGcal, { once: true });
 
   const cfg = store.cfg();
   selAvatar = cfg.avatar || '🐱';
