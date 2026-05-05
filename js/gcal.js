@@ -5,6 +5,8 @@ let tokenClient = null;
 let accessToken = null;
 let tokenExpiry = 0;
 let everAuthed = false; // 한 번이라도 동의한 적 있는지
+let refreshTimer = null;  // 만료 전 자동 갱신 타이머
+let isSilentAttempt = false; // 현재 시도가 백그라운드 silent re-auth인지
 
 function loadStoredToken() {
   try {
@@ -23,18 +25,37 @@ export function isGcalAuthed() {
   return !!accessToken && Date.now() < tokenExpiry;
 }
 
+// 토큰 만료 5분 전에 자동으로 갱신 예약
+function scheduleRefresh() {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  const msLeft = tokenExpiry - Date.now() - 5 * 60 * 1000;
+  if (msLeft > 0 && tokenClient) {
+    refreshTimer = setTimeout(() => {
+      isSilentAttempt = true;
+      tokenClient.requestAccessToken({ prompt: '' });
+    }, msLeft);
+  }
+}
+
 export function initGcal() {
   loadStoredToken();
   if (tryInitTokenClient()) {
-    // 이전에 동의했고 토큰이 만료됐으면 자동 silent re-auth 시도
     if (everAuthed && !isGcalAuthed()) {
+      // 이전에 동의했고 토큰이 만료됐으면 자동 silent re-auth 시도
+      isSilentAttempt = true;
       tokenClient.requestAccessToken({ prompt: '' });
+    } else if (isGcalAuthed()) {
+      scheduleRefresh();
     }
   } else {
     // GIS 라이브러리가 아직 안 로드됐으면 로드 완료 후 재시도
     window.addEventListener('google-identity-loaded', () => {
-      if (tryInitTokenClient() && everAuthed && !isGcalAuthed()) {
+      if (!tryInitTokenClient()) return;
+      if (everAuthed && !isGcalAuthed()) {
+        isSilentAttempt = true;
         tokenClient.requestAccessToken({ prompt: '' });
+      } else if (isGcalAuthed()) {
+        scheduleRefresh();
       }
     }, { once: true });
   }
@@ -51,10 +72,18 @@ function tryInitTokenClient() {
 }
 
 function handleToken(resp) {
-  if (resp.error) { console.error('GCal auth error:', resp.error); return; }
+  isSilentAttempt = false;
+  if (resp.error) {
+    console.error('GCal auth error:', resp.error);
+    // silent re-auth 실패 시에도 UI 업데이트해서 로그인 버튼 표시
+    window.dispatchEvent(new CustomEvent('gcal-authed'));
+    return;
+  }
   accessToken = resp.access_token;
   tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+  everAuthed = true;
   localStorage.setItem('gcal_token', JSON.stringify({ token: accessToken, expiry: tokenExpiry }));
+  scheduleRefresh(); // 다음 만료 전 갱신 예약
   window.dispatchEvent(new CustomEvent('gcal-authed'));
 }
 
@@ -66,15 +95,19 @@ export function gcalLogin() {
   if (!tokenClient) {
     if (!tryInitTokenClient()) return;
   }
-  tokenClient.requestAccessToken({ prompt: isGcalAuthed() ? '' : 'consent' });
+  isSilentAttempt = false;
+  // 이전에 동의한 적 있으면 consent 스킵 (만료 여부와 무관)
+  tokenClient.requestAccessToken({ prompt: everAuthed ? '' : 'consent' });
 }
 
 export function gcalLogout() {
+  if (refreshTimer) clearTimeout(refreshTimer);
   if (accessToken && window.google?.accounts?.oauth2) {
     google.accounts.oauth2.revoke(accessToken);
   }
   accessToken = null;
   tokenExpiry = 0;
+  everAuthed = false;
   localStorage.removeItem('gcal_token');
   window.dispatchEvent(new CustomEvent('gcal-authed'));
 }
@@ -101,8 +134,8 @@ export async function fetchGcalEvents(startDateStr, endDateStr) {
       accessToken = null;
       tokenExpiry = 0;
       localStorage.removeItem('gcal_token');
-      // 이전에 동의한 적 있으면 silent re-auth 시도
       if (everAuthed && tokenClient) {
+        isSilentAttempt = true;
         tokenClient.requestAccessToken({ prompt: '' });
       } else {
         window.dispatchEvent(new CustomEvent('gcal-authed'));
