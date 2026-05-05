@@ -79,7 +79,6 @@ function renderDayEvents() {
       <div class="task-body">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
           <div style="display:flex;align-items:center;gap:6px;min-width:0">
-            ${isGcal ? '<span class="gcal-badge">G</span>' : ''}
             <div class="task-title">${esc(e.title)}</div>
           </div>
           ${!isGcal ? `<button class="act-btn" data-edel="${e.id}">🗑️</button>` : ''}
