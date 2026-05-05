@@ -1,6 +1,6 @@
 // Google Calendar - GAS 프록시 방식 (클라이언트 OAuth 불필요)
 // GAS 스크립트가 계정 권한으로 직접 CalendarApp 호출
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwp08WWrqn1JTHbiXwoFDUkYYJyi6U_dKieoQEU7wz1utvtZi4K-WoR4gX_pnlzruTFWg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzBJcO76YufxvFSFGIvdqOj21r_CEL8LST8Bm3_fg4BXqowwqBAd7x3po5WpQlYsEJYNQ/exec';
 
 export function isGcalAuthed() { return true; }
 export function initGcal() {}
