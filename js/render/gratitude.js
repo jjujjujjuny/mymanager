@@ -67,8 +67,11 @@ export function openGratitudeModal() {
   const yy = now.getFullYear(), mm = String(now.getMonth()+1).padStart(2,'0'), dd = String(now.getDate()).padStart(2,'0');
   document.getElementById('m-grat-ttl').textContent = '마음수양 기록';
   document.getElementById('grat-title').value = `${yy}-${mm}-${dd} 기록`;
-  document.getElementById('grat-content').value = '';
+  const ta = document.getElementById('grat-content');
+  ta.value = '1. \n2. \n3. ';
   openModal('m-grat');
+  // 1번 항목 끝에 커서 위치
+  requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(3, 3); });
 }
 
 function openEditGrat(id) {
@@ -108,3 +111,19 @@ export function delGrat(id) {
   api.remove('gratitude', id);
   renderGratitude();
 }
+
+// 번호 목록 자동 계속 (Enter 시 다음 번호 삽입)
+document.getElementById('grat-content').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const ta = e.target;
+  const pos = ta.selectionStart;
+  const lines = ta.value.substring(0, pos).split('\n');
+  const curLine = lines[lines.length - 1];
+  const m = curLine.match(/^(\d+)\.\s/);
+  if (!m) return;
+  e.preventDefault();
+  const next = `\n${+m[1] + 1}. `;
+  ta.value = ta.value.substring(0, pos) + next + ta.value.substring(ta.selectionEnd);
+  const newPos = pos + next.length;
+  ta.setSelectionRange(newPos, newPos);
+});
